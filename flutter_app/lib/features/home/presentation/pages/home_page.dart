@@ -7,6 +7,7 @@ import 'package:code_card_ai/features/dashboard/presentation/pages/dashboard_pag
 import 'package:code_card_ai/features/monitoring/presentation/pages/monitoring_page.dart';
 import 'package:code_card_ai/features/history/presentation/pages/history_page.dart';
 import 'package:code_card_ai/features/settings/presentation/pages/settings_page.dart';
+import 'package:code_card_ai/features/chat/presentation/pages/chat_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -51,6 +52,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       'label': 'Settings',
       'icon': Icons.settings_rounded,
     },
+    {
+      'label': 'AI Assistant',
+      'icon': Icons.psychology_rounded,
+    },
   ];
 
   @override
@@ -60,6 +65,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       MonitoringScreen(animation: _animationController),
       const HistoryScreen(),
       const SettingsScreen(),
+      const ChatPage(),
     ];
 
     bool isMobile = Responsive.isMobile(context);
@@ -97,10 +103,24 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ),
         ],
       ),
+      floatingActionButton: isMobile
+          ? FloatingActionButton(
+              backgroundColor: const Color(0xFF0F52FF),
+              shape: const CircleBorder(),
+              elevation: 4,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ChatPage()),
+                );
+              },
+              child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white),
+            )
+          : null,
       bottomNavigationBar: isMobile
           ? CustomFloatingNavbar(
               currentIndex: _currentIndex,
-              items: _navItems,
+              items: _navItems.take(4).toList(),
               onTap: (index) => setState(() => _currentIndex = index),
             )
           : null,

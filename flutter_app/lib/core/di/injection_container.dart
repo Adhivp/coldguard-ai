@@ -11,6 +11,10 @@ import 'package:code_card_ai/features/auth/domain/usecases/login_usecase.dart';
 import 'package:code_card_ai/features/auth/domain/usecases/register_usecase.dart';
 import 'package:code_card_ai/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:code_card_ai/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:code_card_ai/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:code_card_ai/features/chat/data/services/model_service.dart';
+
+import 'package:code_card_ai/features/scanner/data/datasources/scan_remote_datasource.dart';
 
 final sl = GetIt.instance;
 
@@ -22,6 +26,9 @@ Future<void> init() async {
       registerUseCase: sl(),
       logoutUseCase: sl(),
     ),
+  );
+  sl.registerFactory(
+    () => ChatBloc(modelService: sl()),
   );
 
   // Use Cases
@@ -46,9 +53,15 @@ Future<void> init() async {
     () => AuthLocalDataSourceImpl(),
   );
 
+  // Scan feature
+  sl.registerLazySingleton<ScanRemoteDataSource>(
+    () => ScanRemoteDataSourceImpl(client: sl()),
+  );
+
   // Core
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
   sl.registerLazySingleton(() => DioClient(sl()));
+  sl.registerLazySingleton(() => ModelService.instance);
 
   // External
   sl.registerLazySingleton(() => Dio());

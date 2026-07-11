@@ -6,16 +6,12 @@ class ErrorView extends StatelessWidget {
   final String errorMessage;
   final VoidCallback? onRetry;
 
-  const ErrorView({
-    super.key,
-    required this.errorMessage,
-    this.onRetry,
-  });
+  const ErrorView({super.key, required this.errorMessage, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Center(
@@ -51,7 +47,10 @@ class ErrorView extends StatelessWidget {
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text('Try Again'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ],
