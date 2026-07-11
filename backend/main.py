@@ -180,6 +180,7 @@ def ingest_telemetry(
         "product_id": payload.product_id,
         "temperature_c": payload.temperature_c,
         "humidity_pct": payload.humidity_pct,
+        "presence": payload.presence,
         "firmware_version": payload.firmware_version,
         "nonce": payload.nonce,
         "reading_ts": reading_ts.isoformat(),
@@ -552,45 +553,77 @@ def get_graph(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Products list – from real device data
+# Products – from products table + latest sensor reading
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ProductListItem(BaseModel):
     product_id: str
-    device_id: str
-    total_readings: int
+    rfid_tag: Optional[str]
+    name: Optional[str]
+    category: Optional[str]
+    manufacturer: Optional[str]
+    batch_number: Optional[str]
+    storage_req_min_c: Optional[float]
+    storage_req_max_c: Optional[float]
+    manufactured_at: Optional[datetime]
+    expires_at: Optional[datetime]
+    location: Optional[str]
     latest_temperature_c: Optional[float]
+    latest_humidity_pct: Optional[float]
+    latest_presence: Optional[bool]
     latest_reading_ts: Optional[datetime]
+    total_readings: int
 
 
 @app.get(
     "/products",
     response_model=List[ProductListItem],
     tags=["Product"],
-    summary="List all products seen in sensor data",
+    summary="List all registered products with latest sensor reading",
 )
 def list_products():
     """
-    Returns every distinct `product_id` that has sent at least one reading,
-    with the latest temperature and timestamp.
+    Returns all rows from the `products` table enriched with the latest
+    temperature, humidity, presence, and reading timestamp from `sensor_readings`.
     """
-    result = supabase.table("sensor_readings").select("product_id, device_id, temperature_c, reading_ts").order("reading_ts", desc=True).execute()
+    products = supabase.table("products").select("*").order("product_id").execute().data
 
-    seen: dict = {}
-    for r in result.data:
+    readings = (
+        supabase.table("sensor_readings")
+        .select("product_id, temperature_c, humidity_pct, presence, reading_ts")
+        .order("reading_ts", desc=True)
+        .execute().data
+    )
+
+    # Latest reading per product_id
+    latest_map: dict = {}
+    count_map: dict = {}
+    for r in readings:
         pid = r["product_id"]
-        if pid not in seen:
-            seen[pid] = r
-
-    counts = supabase.table("sensor_readings").select("product_id", count="exact").execute()
+        count_map[pid] = count_map.get(pid, 0) + 1
+        if pid not in latest_map:
+            latest_map[pid] = r
 
     items = []
-    for pid, latest in seen.items():
+    for p in products:
+        pid = p["product_id"]
+        latest = latest_map.get(pid)
         items.append(ProductListItem(
             product_id=pid,
-            device_id=latest["device_id"],
-            total_readings=sum(1 for r in result.data if r["product_id"] == pid),
-            latest_temperature_c=latest["temperature_c"],
-            latest_reading_ts=latest["reading_ts"],
+            rfid_tag=p.get("rfid_tag"),
+            name=p.get("name"),
+            category=p.get("category"),
+            manufacturer=p.get("manufacturer"),
+            batch_number=p.get("batch_number"),
+            storage_req_min_c=p.get("storage_req_min_c"),
+            storage_req_max_c=p.get("storage_req_max_c"),
+            manufactured_at=p.get("manufactured_at"),
+            expires_at=p.get("expires_at"),
+            location=p.get("location"),
+            latest_temperature_c=latest["temperature_c"] if latest else None,
+            latest_humidity_pct=latest.get("humidity_pct") if latest else None,
+            latest_presence=latest.get("presence") if latest else None,
+            latest_reading_ts=latest["reading_ts"] if latest else None,
+            total_readings=count_map.get(pid, 0),
         ))
     return items

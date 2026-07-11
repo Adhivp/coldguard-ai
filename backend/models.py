@@ -13,12 +13,28 @@ CREATE TABLE IF NOT EXISTS devices (
     is_active        BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
+CREATE TABLE IF NOT EXISTS products (
+    product_id        TEXT PRIMARY KEY,
+    rfid_tag          TEXT UNIQUE,
+    name              TEXT,
+    category          TEXT,
+    manufacturer      TEXT,
+    batch_number      TEXT,
+    storage_req_min_c FLOAT,
+    storage_req_max_c FLOAT,
+    manufactured_at   TIMESTAMPTZ,
+    expires_at        TIMESTAMPTZ,
+    location          TEXT,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS sensor_readings (
     id               BIGSERIAL   PRIMARY KEY,
     device_id        TEXT        NOT NULL REFERENCES devices(device_id),
     product_id       TEXT        NOT NULL,
     temperature_c    FLOAT       NOT NULL,
     humidity_pct     FLOAT,
+    presence         BOOLEAN,
     firmware_version TEXT        NOT NULL,
     nonce            TEXT        NOT NULL,
     reading_ts       TIMESTAMPTZ NOT NULL,
@@ -37,11 +53,17 @@ CREATE TABLE IF NOT EXISTS request_log (
 CREATE INDEX IF NOT EXISTS idx_readings_device_product
     ON sensor_readings (device_id, product_id, reading_ts DESC);
 
+CREATE INDEX IF NOT EXISTS idx_products_rfid
+    ON products (rfid_tag);
+
 CREATE INDEX IF NOT EXISTS idx_nonces_used_at
     ON request_log (used_at);
 
 CREATE INDEX IF NOT EXISTS idx_nonces_device_id
     ON request_log (device_id);
+
+-- Add presence column to existing sensor_readings if upgrading
+ALTER TABLE sensor_readings ADD COLUMN IF NOT EXISTS presence BOOLEAN;
 """
 
 

@@ -22,6 +22,10 @@ class TelemetryPayload(BaseModel):
     - The secret is **never** included in the request
 
     The signature is passed in the `X-CG-Signature` HTTP header.
+
+    ### presence
+    Optional boolean sent once per minute. `true` = product detected by RFID/IR sensor,
+    `false` = product absent. Omit if the device has no presence sensor.
     """
     device_id: str = Field(..., example="CG-UNO-0001", description="Globally unique device ID")
     product_id: str = Field(..., example="PROD-001", description="Product being monitored (one device → many products)")
@@ -30,6 +34,7 @@ class TelemetryPayload(BaseModel):
     firmware_version: str = Field(..., example="1.2.0", description="Firmware version running on the device")
     temperature_c: float = Field(..., example=4.3, description="Temperature in Celsius")
     humidity_pct: Optional[float] = Field(None, example=58.2, description="Relative humidity %, omit if sensor absent")
+    presence: Optional[bool] = Field(None, example=True, description="Product presence (true=present, false=absent). Sent once per minute, omit if no presence sensor.")
 
 
 # ── Backend → Arduino/App ─────────────────────────────────────────────────────
@@ -57,6 +62,7 @@ class ReadingOut(BaseModel):
     product_id: str
     temperature_c: float
     humidity_pct: Optional[float]
+    presence: Optional[bool]
     firmware_version: str
     reading_ts: datetime
     received_at: datetime

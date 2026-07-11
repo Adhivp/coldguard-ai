@@ -15,19 +15,36 @@ CREATE TABLE IF NOT EXISTS devices (
     is_active       BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
+-- Products – registered products with RFID tag
+CREATE TABLE IF NOT EXISTS products (
+    product_id        TEXT PRIMARY KEY,
+    rfid_tag          TEXT UNIQUE,                 -- RFID tag UID scanned by the reader
+    name              TEXT,
+    category          TEXT,
+    manufacturer      TEXT,
+    batch_number      TEXT,
+    storage_req_min_c FLOAT,
+    storage_req_max_c FLOAT,
+    manufactured_at   TIMESTAMPTZ,
+    expires_at        TIMESTAMPTZ,
+    location          TEXT,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Per-device, per-product telemetry readings
 CREATE TABLE IF NOT EXISTS sensor_readings (
-    id              BIGSERIAL   PRIMARY KEY,
-    device_id       TEXT        NOT NULL REFERENCES devices(device_id),
-    product_id      TEXT        NOT NULL,          -- one device → many products
-    temperature_c   FLOAT       NOT NULL,
-    humidity_pct    FLOAT,
-    firmware_version TEXT       NOT NULL,
-    nonce           TEXT        NOT NULL,
-    reading_ts      TIMESTAMPTZ NOT NULL,          -- UTC timestamp from the device
-    received_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
-    gap_seconds     FLOAT,                         -- gap from previous reading (NULL = first)
-    continuity_ok   BOOLEAN     NOT NULL DEFAULT TRUE
+    id               BIGSERIAL   PRIMARY KEY,
+    device_id        TEXT        NOT NULL REFERENCES devices(device_id),
+    product_id       TEXT        NOT NULL,          -- one device → many products
+    temperature_c    FLOAT       NOT NULL,
+    humidity_pct     FLOAT,
+    presence         BOOLEAN,                       -- product present/absent, sent once per minute
+    firmware_version TEXT        NOT NULL,
+    nonce            TEXT        NOT NULL,
+    reading_ts       TIMESTAMPTZ NOT NULL,          -- UTC timestamp from the device
+    received_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    gap_seconds      FLOAT,                         -- gap from previous reading (NULL = first)
+    continuity_ok    BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
 -- Replay attack prevention – every request nonce stored permanently
