@@ -2,7 +2,7 @@ class ApiConstants {
   ApiConstants._();
 
   static String get baseUrl {
-    return 'http://10.91.51.23:8000';
+    return 'http://coldguard-ai.onrender.com';
   }
 
   // Scan endpoint

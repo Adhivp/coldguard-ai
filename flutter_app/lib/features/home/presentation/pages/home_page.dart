@@ -16,7 +16,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   late final AnimationController _animationController;
 
@@ -36,46 +37,31 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   final List<Map<String, dynamic>> _navItems = [
-    {
-      'label': 'Dashboard',
-      'icon': Icons.home_rounded,
-    },
-    {
-      'label': 'Monitoring',
-      'icon': Icons.monitor_heart_rounded,
-    },
-    {
-      'label': 'History',
-      'icon': Icons.access_time_rounded,
-    },
-    {
-      'label': 'Settings',
-      'icon': Icons.settings_rounded,
-    },
-    {
-      'label': 'AI Assistant',
-      'icon': Icons.psychology_rounded,
-    },
+    {'label': 'Dashboard', 'icon': Icons.home_rounded},
+    {'label': 'Monitoring', 'icon': Icons.monitor_heart_rounded},
+    {'label': 'History', 'icon': Icons.access_time_rounded},
+    {'label': 'Settings', 'icon': Icons.settings_rounded},
+    {'label': 'AI Assistant', 'icon': Icons.psychology_rounded},
   ];
 
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
       const DashboardScreen(),
-      MonitoringScreen(animation: _animationController),
-      const HistoryScreen(),
-      const SettingsScreen(),
-      const ChatPage(),
+      SafeArea(
+        bottom: false,
+        child: MonitoringScreen(animation: _animationController),
+      ),
+      const SafeArea(bottom: false, child: HistoryScreen()),
+      const SafeArea(bottom: false, child: SettingsScreen()),
+      const SafeArea(bottom: false, child: ChatPage()),
     ];
 
     bool isMobile = Responsive.isMobile(context);
     bool isTablet = Responsive.isTablet(context);
     bool isDesktop = Responsive.isDesktop(context);
 
-    Widget contentBody = IndexedStack(
-      index: _currentIndex,
-      children: screens,
-    );
+    Widget contentBody = IndexedStack(index: _currentIndex, children: screens);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -94,18 +80,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               onTap: (index) => setState(() => _currentIndex = index),
             ),
           if (!isMobile)
-            const VerticalDivider(width: 1, thickness: 1, color: Color(0xFFE2E8F0)),
-          Expanded(
-            child: SafeArea(
-              bottom: false,
-              child: contentBody,
+            const VerticalDivider(
+              width: 1,
+              thickness: 1,
+              color: Color(0xFFE2E8F0),
             ),
-          ),
+          Expanded(child: contentBody),
         ],
       ),
       floatingActionButton: isMobile
           ? FloatingActionButton(
-              backgroundColor: const Color(0xFF0F52FF),
+              backgroundColor: const Color(0xFF00ACC1),
               shape: const CircleBorder(),
               elevation: 4,
               onPressed: () {
@@ -114,7 +99,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   MaterialPageRoute(builder: (context) => const ChatPage()),
                 );
               },
-              child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white),
+              child: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: Colors.white,
+              ),
             )
           : null,
       bottomNavigationBar: isMobile

@@ -71,7 +71,7 @@ class CustomFloatingNavbar extends StatelessWidget {
                   height: 50,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF3B82F6), Color(0xFF0F52FF)],
+                      colors: [Color(0xFF26C6DA), Color(0xFF00ACC1)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -82,7 +82,7 @@ class CustomFloatingNavbar extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF0F52FF).withOpacity(0.25),
+                        color: const Color(0xFF00ACC1).withOpacity(0.25),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -117,7 +117,7 @@ class CustomFloatingNavbar extends StatelessWidget {
             Icon(
               item['icon'] as IconData,
               color: isSelected
-                  ? const Color(0xFF0F52FF)
+                  ? const Color(0xFF00ACC1)
                   : const Color(0xFFB0B8C9),
               size: 20,
             ),
@@ -128,7 +128,7 @@ class CustomFloatingNavbar extends StatelessWidget {
                 fontSize: 9,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
-                    ? const Color(0xFF0F52FF)
+                    ? const Color(0xFF00ACC1)
                     : const Color(0xFFB0B8C9),
               ),
             ),
