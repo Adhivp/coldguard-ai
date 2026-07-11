@@ -1,9 +1,13 @@
+import hashlib
+import hmac
 import json
 import os
+import secrets
 import threading
 import time
 import urllib.error
 import urllib.request
+from datetime import datetime, timezone
 
 from arduino.app_utils import App, Bridge
 from arduino.app_bricks.web_ui import WebUI
@@ -11,15 +15,77 @@ from arduino.app_bricks.web_ui import WebUI
 _ui_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ui")
 ui = WebUI(assets_dir_path=_ui_dir)
 
-POLL_INTERVAL_SECONDS = 1.0
+# ── Config ────────────────────────────────────────────────────────────────────
+BACKEND_URL      = "https://coldguard-ai.onrender.com/telemetry"
+DEVICE_ID        = "CG-UNO-0001"
+PRODUCT_ID       = "PROD-001"
+FIRMWARE_VERSION = "1.0.0"
+# 64-char hex secret from POST /admin/provision – never share or commit this
+SECRET_HEX       = "replace_with_64_char_hex_from_provision_endpoint"
 
-# ── 1-minute batching ───────────────────────────────────────
-BATCH_SIZE = 60  # 60 readings @ 1/sec = 1 minute
-SAMPLE_ENDPOINT_URL = "https://example.com/api/sample"  # TODO: replace with your real endpoint
+POLL_INTERVAL_SECONDS  = 1.0   # UI refresh rate
+SEND_INTERVAL_SECONDS  = 60.0  # backend send rate (1 per minute)
 
-_batch_buffer = []
-_batch_lock = threading.Lock()
+# ── State ─────────────────────────────────────────────────────────────────────
+_last_send_time = 0.0
+_latest_reading = {}
+_reading_lock   = threading.Lock()
 
+
+# ── HMAC-SHA256 auth ──────────────────────────────────────────────────────────
+
+def _build_signature(timestamp_utc: str, nonce: str, temp_c: float, humid_pct) -> str:
+    """
+    Matches backend auth.py _build_message():
+      HMAC-SHA256(secret, "device_id:product_id:timestamp_utc:nonce:firmware_version:temperature_c:humidity_pct")
+    humidity_pct is the string "null" when absent.
+    """
+    humid_str = "null" if humid_pct is None else f"{humid_pct:.2f}"
+    message   = f"{DEVICE_ID}:{PRODUCT_ID}:{timestamp_utc}:{nonce}:{FIRMWARE_VERSION}:{temp_c:.2f}:{humid_str}"
+    key       = bytes.fromhex(SECRET_HEX)
+    return hmac.new(key, message.encode(), hashlib.sha256).hexdigest()
+
+
+# ── Backend sender ────────────────────────────────────────────────────────────
+
+def _send_to_backend(temp_c: float, humid_pct):
+    timestamp_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    nonce         = secrets.token_hex(16)
+    signature     = _build_signature(timestamp_utc, nonce, temp_c, humid_pct)
+
+    payload = {
+        "device_id":        DEVICE_ID,
+        "product_id":       PRODUCT_ID,
+        "timestamp_utc":    timestamp_utc,
+        "nonce":            nonce,
+        "firmware_version": FIRMWARE_VERSION,
+        "temperature_c":    round(temp_c, 2),
+    }
+    if humid_pct is not None:
+        payload["humidity_pct"] = round(humid_pct, 2)
+
+    body = json.dumps(payload).encode("utf-8")
+    req  = urllib.request.Request(
+        BACKEND_URL,
+        data=body,
+        headers={
+            "Content-Type":   "application/json",
+            "X-CG-Signature": signature,
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read())
+            status = result.get("status", "?")
+            print(f"[backend] {status} | T={temp_c:.2f}°C H={humid_pct}%")
+    except urllib.error.HTTPError as exc:
+        print(f"[backend] HTTP {exc.code}: {exc.read().decode()}")
+    except urllib.error.URLError as exc:
+        print(f"[backend] Network error: {exc}")
+
+
+# ── Bridge helpers ────────────────────────────────────────────────────────────
 
 def _call_mcu(method, *args):
     try:
@@ -29,78 +95,61 @@ def _call_mcu(method, *args):
         return None
 
 
-def _send(event, data, client=None):
-    """Push a WebSocket event to one client, or broadcast to all if client is None."""
+def _send_ui(event, data, client=None):
     if client:
         ui.send_message(event, data, client)
     else:
         ui.send_message(event, data)
 
 
-def _send_batch_to_backend(batch):
-    """POST one minute's worth of readings to the sample endpoint."""
-    payload = json.dumps({"readings": batch}).encode("utf-8")
-    req = urllib.request.Request(
-        SAMPLE_ENDPOINT_URL,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            print(f"[backend] Sent {len(batch)} readings, status={resp.status}")
-    except urllib.error.URLError as exc:
-        print(f"[backend] Failed to send batch of {len(batch)} readings: {exc}")
-
-
-def _buffer_reading(data):
-    """Add one second's reading to the buffer; flush + clear once 60 are collected."""
-    reading = {
-        "temperature_c": data.get("temperature_c"),
-        "humidity": data.get("humidity"),
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime()),
-    }
-
-    batch_to_send = None
-    with _batch_lock:
-        _batch_buffer.append(reading)
-        if len(_batch_buffer) >= BATCH_SIZE:
-            batch_to_send = list(_batch_buffer)
-            _batch_buffer.clear()  # remove the data once it's queued to send
-
-    if batch_to_send:
-        # Send on a separate thread so a slow/stuck network call never
-        # delays the next second's temperature reading or UI update.
-        threading.Thread(target=_send_batch_to_backend, args=(batch_to_send,), daemon=True).start()
-
-
-def _read_and_broadcast(client=None, buffer=False):
-    """Fetch a reading from the sketch and push it to the browser(s).
-
-    buffer=True is used only by the automatic 1-second poll loop, so it adds
-    the reading to the 1-minute batch. On-demand requests from the browser
-    (buffer=False) are not buffered, so they can't skew the 60-per-minute cadence.
-    """
-    data = _call_mcu("get_temperature")
-    if data is None:
-        _send("temperature_error", {"message": "Could not read sensor"}, client)
-        return
-    _send("temperature_update", data, client)
-
-    if buffer:
-        _buffer_reading(data)
-
+# ── Poll loop (every 1 second) ────────────────────────────────────────────────
 
 def _poll_loop():
-    """Background thread: keeps every connected client updated automatically."""
+    global _last_send_time
     while True:
-        _read_and_broadcast(buffer=True)
+        data = _call_mcu("get_temperature")
+        if data is None:
+            _send_ui("temperature_error", {"message": "Could not read sensor"})
+            time.sleep(POLL_INTERVAL_SECONDS)
+            continue
+
+        temp_c    = data.get("temperature_c")
+        humid_pct = data.get("humidity")
+
+        # Update shared latest reading for on-demand requests
+        with _reading_lock:
+            _latest_reading.update(data)
+
+        # Push to UI every second
+        _send_ui("temperature_update", data)
+
+        # Send to backend every 60 seconds on a separate thread
+        now = time.monotonic()
+        if now - _last_send_time >= SEND_INTERVAL_SECONDS:
+            _last_send_time = now
+            threading.Thread(
+                target=_send_to_backend,
+                args=(temp_c, humid_pct),
+                daemon=True,
+            ).start()
+
         time.sleep(POLL_INTERVAL_SECONDS)
 
 
+# ── On-demand UI request ──────────────────────────────────────────────────────
+
 def on_request_temperature(client, data=None):
-    """Lets the browser ask for an immediate reading (e.g. on page load)."""
-    _read_and_broadcast(client)
+    """Browser asked for an immediate reading (e.g. on page load)."""
+    with _reading_lock:
+        cached = dict(_latest_reading)
+    if cached:
+        _send_ui("temperature_update", cached, client)
+    else:
+        fresh = _call_mcu("get_temperature")
+        if fresh:
+            _send_ui("temperature_update", fresh, client)
+        else:
+            _send_ui("temperature_error", {"message": "Could not read sensor"}, client)
 
 
 ui.on_message("request_temperature", on_request_temperature)

@@ -49,6 +49,7 @@ from pydantic import BaseModel, Field
 import auth
 import schemas
 from database import supabase
+from models import create_tables
 
 load_dotenv()
 
@@ -60,6 +61,7 @@ app = FastAPI(
     description=__doc__,
     version="2.0.0",
 )
+
 
 app.add_middleware(
     CORSMiddleware,

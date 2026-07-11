@@ -1,6 +1,6 @@
 profiles:
   default:
-    fqbn: 
+    fqbn: arduino:zephyr:uno_r4_wifi
     platforms:
       - platform: arduino:zephyr
     libraries:
