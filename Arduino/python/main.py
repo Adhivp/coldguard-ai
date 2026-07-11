@@ -20,7 +20,7 @@ BACKEND_URL      = "https://coldguard-ai.onrender.com/telemetry"
 DEVICE_ID        = "CG-UNO-0001"
 PRODUCT_ID       = "PROD-001"
 FIRMWARE_VERSION = "1.0.0"
-# 64-char hex secret from POST /admin/provision – never share or commit this
+# 64-char hex secret from POST /admin/provision
 SECRET_HEX       = "16a4fc06c7bbacd3fb82f3ab972d2b9acd4ea1ee0e508d04ad43aae16fc37d14"
 
 POLL_INTERVAL_SECONDS  = 1.0   # UI refresh rate + per-second buffer

@@ -43,7 +43,7 @@ def _get_device_secret(device_id: str) -> str:
 def _check_and_consume_nonce(device_id: str, nonce: str) -> None:
     """Reject replayed nonces. Raises 401 if already seen."""
     existing = (
-        supabase.table("used_nonces")
+        supabase.table("request_log")
         .select("nonce")
         .eq("device_id", device_id)
         .eq("nonce", nonce)
@@ -51,7 +51,7 @@ def _check_and_consume_nonce(device_id: str, nonce: str) -> None:
     )
     if existing.data:
         raise HTTPException(status_code=401, detail="Replayed nonce – request rejected")
-    supabase.table("used_nonces").insert({"device_id": device_id, "nonce": nonce}).execute()
+    supabase.table("request_log").insert({"device_id": device_id, "nonce": nonce}).execute()
 
 
 def _verify_timestamp(timestamp_utc: str) -> datetime:
