@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌡️ Thermal Sensor</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>🌡️ Thermal Sensor</h1>
+    <span id="status" class="status connecting">Connecting…</span>
+  </header>
+
+  <main>
+    <section class="card reading-card">
+      <div class="readings-row">
+        <div class="reading-col">
+          <span class="reading-label">Temperature</span>
+          <div class="temp-display">
+            <span id="temperature" class="temp-value">--</span>
+            <span class="temp-unit">°C</span>
+          </div>
+          <button id="unit-toggle" class="unit-toggle">Show °F</button>
+        </div>
+        <div class="reading-col">
+          <span class="reading-label">Humidity</span>
+          <span id="humidity" class="humidity-value">-- %</span>
+        </div>
+      </div>
+      <div class="updated-row">
+        <span class="meta-label">Last updated</span>
+        <span id="updated" class="meta-value">--</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

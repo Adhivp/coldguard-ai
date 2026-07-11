@@ -1,0 +1,176 @@
+:root {
+  --bg:        #0f1117;
+  --surface:   #1c1f2a;
+  --border:    #2e3244;
+  --accent:    #f0973f;
+  --text:      #e2e8f0;
+  --muted:     #8892a4;
+  --green:     #22c55e;
+  --red:       #ef4444;
+  --radius:    14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+}
+
+header h1 { font-size: 1.35rem; letter-spacing: -0.02em; }
+
+.status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status.connected    { background: var(--green); color: #fff; }
+.status.disconnected { background: var(--red);   color: #fff; }
+.status.connecting   { background: var(--muted); color: #fff; }
+
+/* ── Layout ─────────────────────────────────────────────── */
+main {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2.5rem 2rem;
+  width: 100%;
+}
+
+/* ── Reading card ───────────────────────────────────────── */
+.reading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.readings-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3rem;
+  width: 100%;
+}
+
+.reading-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reading-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.humidity-value {
+  font-size: 2.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+
+.temp-display {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1;
+}
+
+.temp-value {
+  font-size: 6rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.03em;
+  transition: color 0.2s;
+}
+
+.temp-value.pulse {
+  animation: pulse 0.4s ease-out;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.temp-unit {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 0.75rem;
+  margin-left: 0.25rem;
+}
+
+.unit-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.unit-toggle:hover {
+  background: var(--border);
+  border-color: var(--accent);
+}
+
+.updated-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.meta-label { color: var(--muted); }
+.meta-value { font-weight: 600; }
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .temp-value { font-size: 4.5rem; }
+  .temp-unit  { font-size: 1.5rem; }
+  .humidity-value { font-size: 2rem; }
+  .readings-row { gap: 1.5rem; }
+}

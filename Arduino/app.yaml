@@ -1,0 +1,6 @@
+name: Thermal Sensor Monitor
+description: Reads live temperature from the Modulino Thermo sensor and displays it in a browser UI
+ports: []
+bricks:
+- arduino:web_ui: {}
+icon: 🌡️
