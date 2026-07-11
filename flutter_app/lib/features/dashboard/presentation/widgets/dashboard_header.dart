@@ -29,7 +29,7 @@ class DashboardHeader extends StatelessWidget {
 
         // Content
         Padding(
-          padding: EdgeInsets.fromLTRB(20.0, topPadding + 16.0, 20.0, 20.0),
+          padding: EdgeInsets.fromLTRB(16.0, topPadding + 12.0, 16.0, 14.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,26 +42,26 @@ class DashboardHeader extends StatelessWidget {
                     Text(
                       '👋 $greetingPrefix!',
                       style: GoogleFonts.inter(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: Colors.white.withOpacity(0.9),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       'ColdGuard AI',
                       style: GoogleFonts.outfit(
-                        fontSize: 26,
+                        fontSize: 22,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                         height: 1.1,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       'Live intelligence for every shipment',
                       style: GoogleFonts.inter(
-                        fontSize: 11,
+                        fontSize: 10.5,
                         color: Colors.white.withOpacity(0.8),
                         fontWeight: FontWeight.w400,
                       ),

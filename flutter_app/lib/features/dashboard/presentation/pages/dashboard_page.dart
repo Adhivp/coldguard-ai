@@ -4,7 +4,6 @@ import 'package:code_card_ai/features/dashboard/presentation/widgets/scan_hero_c
 import 'package:code_card_ai/features/dashboard/presentation/widgets/navigation_grid.dart';
 import 'package:code_card_ai/features/dashboard/presentation/widgets/stats_row.dart';
 import 'package:code_card_ai/features/dashboard/presentation/widgets/active_shipment_card.dart';
-import 'package:code_card_ai/features/dashboard/presentation/widgets/recent_activity_list.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -29,8 +28,6 @@ class DashboardScreen extends StatelessWidget {
             StatsRow(),
             SizedBox(height: 20),
             ActiveShipmentCard(),
-            SizedBox(height: 16),
-            RecentActivityList(),
             SizedBox(height: 24),
           ],
         ),

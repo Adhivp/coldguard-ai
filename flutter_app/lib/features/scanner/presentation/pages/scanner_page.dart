@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:code_card_ai/core/di/injection_container.dart';
 import 'package:code_card_ai/features/scanner/data/datasources/scan_remote_datasource.dart';
+import 'package:code_card_ai/features/scanner/data/datasources/scan_local_datasource.dart';
 import 'package:code_card_ai/features/scanner/presentation/pages/scan_result_page.dart';
 
 class ScannerPage extends StatefulWidget {
@@ -62,6 +63,9 @@ class _ScannerPageState extends State<ScannerPage> with SingleTickerProviderStat
       }
 
       final scanResult = await remoteDataSource.scanProduct(targetId);
+      
+      // Save scan to local history
+      await sl<ScanLocalDataSource>().saveScanResult(scanResult);
       
       if (mounted) {
         // Navigate to result screen

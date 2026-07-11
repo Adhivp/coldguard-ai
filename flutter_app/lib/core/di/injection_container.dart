@@ -15,6 +15,7 @@ import 'package:code_card_ai/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:code_card_ai/features/chat/data/services/model_service.dart';
 
 import 'package:code_card_ai/features/scanner/data/datasources/scan_remote_datasource.dart';
+import 'package:code_card_ai/features/scanner/data/datasources/scan_local_datasource.dart';
 
 final sl = GetIt.instance;
 
@@ -56,6 +57,9 @@ Future<void> init() async {
   // Scan feature
   sl.registerLazySingleton<ScanRemoteDataSource>(
     () => ScanRemoteDataSourceImpl(client: sl()),
+  );
+  sl.registerLazySingleton<ScanLocalDataSource>(
+    () => ScanLocalDataSourceImpl(),
   );
 
   // Core
