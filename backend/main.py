@@ -698,6 +698,22 @@ def download_breach_model():
     return FileResponse(path, media_type="application/octet-stream", filename="breach.joblib")
 
 
+@app.get("/model/anomaly.json", tags=["ML Models"], summary="Download anomaly model weights (no-dependency JSON)")
+def download_anomaly_json():
+    path = MODEL_DIR / "anomaly.json"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="anomaly.json not found. Run POST /admin/train.")
+    return FileResponse(path, media_type="application/json", filename="anomaly.json")
+
+
+@app.get("/model/breach.json", tags=["ML Models"], summary="Download breach model weights (no-dependency JSON)")
+def download_breach_json():
+    path = MODEL_DIR / "breach.json"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="breach.json not found. Run POST /admin/train.")
+    return FileResponse(path, media_type="application/json", filename="breach.json")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Admin endpoints
 # ─────────────────────────────────────────────────────────────────────────────

@@ -4,3 +4,7 @@ ports: []
 bricks:
 - arduino:web_ui: {}
 icon: 🌡️
+packages:
+- scikit-learn
+- joblib
+- numpy

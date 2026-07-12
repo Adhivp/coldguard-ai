@@ -38,3 +38,43 @@ Rows used    : 43222
   Samples    : 43152  (breaches: 129)
   Model size : 53.0 KB
 ============================================================
+
+============================================================
+Version      : v20260712
+Trained at   : 2026-07-12 06:02:11 UTC
+Training days: 30
+Rows used    : 43192
+
+-- Anomaly Detector --
+  Accuracy   : 0.9997
+  F1 Score   : 0.6471
+  Samples    : 43132  (anomalies: 11)
+  Model size : 425.1 KB
+
+-- Breach Predictor --
+  Accuracy   : 0.9979
+  F1 Score   : 0.5340
+  Recall     : 0.3953
+  Samples    : 43122  (breaches: 129)
+  Model size : 53.0 KB
+============================================================
+
+============================================================
+Version      : v20260712
+Trained at   : 2026-07-12 06:02:41 UTC
+Training days: 30
+Rows used    : 43191
+
+-- Anomaly Detector --
+  Accuracy   : 0.9999
+  F1 Score   : 0.8148
+  Samples    : 43131  (anomalies: 11)
+  Model size : 425.1 KB
+
+-- Breach Predictor --
+  Accuracy   : 0.9982
+  F1 Score   : 0.6020
+  Recall     : 0.4574
+  Samples    : 43121  (breaches: 129)
+  Model size : 53.1 KB
+============================================================

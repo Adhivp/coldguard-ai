@@ -90,21 +90,13 @@ def _download_file(url: str, dest: Path) -> bool:
         return False
 
 
-def _load_interpreter(path: Path):
+def _load_model(path: Path):
     try:
-        import tflite_runtime.interpreter as tflite
-        interp = tflite.Interpreter(model_path=str(path))
-        interp.allocate_tensors()
-        return interp
-    except ImportError:
-        try:
-            import tensorflow as tf
-            interp = tf.lite.Interpreter(model_path=str(path))
-            interp.allocate_tensors()
-            return interp
-        except Exception as exc:
-            print(f"[model] Could not load interpreter: {exc}")
-            return None
+        import joblib
+        return joblib.load(path)
+    except Exception as exc:
+        print(f"[model] Could not load {path.name}: {exc}")
+        return None
 
 
 def _check_and_update_models() -> None:
@@ -118,13 +110,13 @@ def _check_and_update_models() -> None:
         return
 
     print(f"[model] New version available: {new_version}. Downloading...")
-    anomaly_ok = _download_file(meta["anomaly_url"], MODEL_DIR / "anomaly.tflite")
-    breach_ok  = _download_file(meta["breach_url"],  MODEL_DIR / "breach.tflite")
+    anomaly_ok = _download_file(meta["anomaly_url"], MODEL_DIR / "anomaly.joblib")
+    breach_ok  = _download_file(meta["breach_url"],  MODEL_DIR / "breach.joblib")
 
     if anomaly_ok and breach_ok:
         with _model_lock:
-            _anomaly_interpreter = _load_interpreter(MODEL_DIR / "anomaly.tflite")
-            _breach_interpreter  = _load_interpreter(MODEL_DIR / "breach.tflite")
+            _anomaly_interpreter = _load_model(MODEL_DIR / "anomaly.joblib")
+            _breach_interpreter  = _load_model(MODEL_DIR / "breach.joblib")
             _model_version = new_version
         print(f"[model] Loaded version {_model_version}")
     else:
@@ -132,14 +124,13 @@ def _check_and_update_models() -> None:
 
 
 def _model_watcher() -> None:
-    # Also try loading cached models from disk immediately
     global _anomaly_interpreter, _breach_interpreter
-    a_path = MODEL_DIR / "anomaly.tflite"
-    b_path = MODEL_DIR / "breach.tflite"
+    a_path = MODEL_DIR / "anomaly.joblib"
+    b_path = MODEL_DIR / "breach.joblib"
     if a_path.exists() and b_path.exists():
         with _model_lock:
-            _anomaly_interpreter = _load_interpreter(a_path)
-            _breach_interpreter  = _load_interpreter(b_path)
+            _anomaly_interpreter = _load_model(a_path)
+            _breach_interpreter  = _load_model(b_path)
         print("[model] Loaded cached models from disk")
 
     _check_and_update_models()
@@ -161,51 +152,27 @@ def _normalise(temp: float, humid: float, gap: float) -> list[float]:
 
 def _run_inference(buffer: list[dict]) -> tuple[float, float]:
     """Returns (anomaly_score, breach_probability). Both 0.0 if models not loaded."""
-    import numpy as np
+    with _model_lock:
+        a_model = _anomaly_interpreter
+        b_model = _breach_interpreter
 
     anomaly_score      = 0.0
     breach_probability = 0.0
 
-    with _model_lock:
-        a_interp = _anomaly_interpreter
-        b_interp = _breach_interpreter
-
-    if len(buffer) < 60 or a_interp is None:
-        return anomaly_score, breach_probability
-
     try:
-        features = [_normalise(r["temperature_c"], r.get("humidity_pct"), r.get("gap_seconds")) for r in buffer[-60:]]
-        X_a = np.array([features], dtype=np.float32)
-        inp = a_interp.get_input_details()[0]
-        out = a_interp.get_output_details()[0]
-        # INT8 quantisation: scale + zero_point
-        scale, zp = inp["quantization"]
-        if scale != 0:
-            X_a = (X_a / scale + zp).astype(np.int8)
-        a_interp.set_tensor(inp["index"], X_a)
-        a_interp.invoke()
-        raw = a_interp.get_tensor(out["index"])
-        o_scale, o_zp = out["quantization"]
-        anomaly_score = float((raw[0][0] - o_zp) * o_scale) if o_scale != 0 else float(raw[0][0])
-    except Exception as exc:
-        print(f"[inference] anomaly error: {exc}")
+        if len(buffer) >= 60 and a_model is not None:
+            flat = [v for r in buffer[-60:]
+                    for v in _normalise(r["temperature_c"], r.get("humidity_pct"), r.get("gap_seconds"))
+                    + [r.get("minutes_above_limit") or 0.0]]
+            anomaly_score = float(a_model.predict_proba([flat])[0][1])
 
-    if len(buffer) >= 10 and b_interp is not None:
-        try:
-            features10 = [_normalise(r["temperature_c"], r.get("humidity_pct"), r.get("gap_seconds")) for r in buffer[-10:]]
-            X_b = np.array([features10], dtype=np.float32)
-            inp = b_interp.get_input_details()[0]
-            out = b_interp.get_output_details()[0]
-            scale, zp = inp["quantization"]
-            if scale != 0:
-                X_b = (X_b / scale + zp).astype(np.int8)
-            b_interp.set_tensor(inp["index"], X_b)
-            b_interp.invoke()
-            raw = b_interp.get_tensor(out["index"])
-            o_scale, o_zp = out["quantization"]
-            breach_probability = float((raw[0][0] - o_zp) * o_scale) if o_scale != 0 else float(raw[0][0])
-        except Exception as exc:
-            print(f"[inference] breach error: {exc}")
+        if len(buffer) >= 10 and b_model is not None:
+            flat10 = [v for r in buffer[-10:]
+                      for v in _normalise(r["temperature_c"], r.get("humidity_pct"), r.get("gap_seconds"))
+                      + [r.get("minutes_above_limit") or 0.0]]
+            breach_probability = float(b_model.predict_proba([flat10])[0][1])
+    except Exception as exc:
+        print(f"[inference] error: {exc}")
 
     return round(anomaly_score, 4), round(breach_probability, 4)
 
@@ -314,7 +281,6 @@ def _poll_loop() -> None:
         _last_reading_ts = now_ts
 
         # ── Update inference buffer ───────────────────────────────────────────
-        gap = (_last_reading_ts - _last_reading_ts).total_seconds() if _last_reading_ts else 60.0
         with _buffer_lock:
             _inference_buffer.append({
                 "temperature_c": temp_c,
@@ -373,7 +339,7 @@ def _poll_loop() -> None:
 
 # ── On-demand UI request ──────────────────────────────────────────────────────
 
-def on_request_temperature(client, data=None):
+def on_request_temperature(client, **_):
     with _reading_lock:
         cached = dict(_latest_reading)
     if cached:

@@ -10,6 +10,7 @@ Usage:
 """
 
 import argparse
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -154,11 +155,29 @@ def run(days: int = 30, version: str | None = None) -> None:
     breach_pipe.fit(X_b, y_b)
     print(classification_report(y_b, breach_pipe.predict(X_b), target_names=["safe", "breach"]))
 
-    # ── Save ──────────────────────────────────────────────────────────────
+    # ── Save joblib (backend inference) ──────────────────────────────────
     joblib.dump(anomaly_pipe, MODEL_DIR / "anomaly.joblib")
     joblib.dump(breach_pipe,  MODEL_DIR / "breach.joblib")
     a_kb = (MODEL_DIR / "anomaly.joblib").stat().st_size / 1024
     b_kb = (MODEL_DIR / "breach.joblib").stat().st_size / 1024
+
+    # ── Export weights as JSON (zero-dependency inference for Arduino App Lab)
+    import json as _json
+
+    def _export_json(pipe, path):
+        scaler = pipe.named_steps["scaler"]
+        clf    = pipe.named_steps["clf"]
+        data = {
+            "scaler_mean":  scaler.mean_.tolist(),
+            "scaler_scale": scaler.scale_.tolist(),
+            "coefs":        [w.tolist() for w in clf.coefs_],
+            "intercepts":   [b.tolist() for b in clf.intercepts_],
+        }
+        path.write_text(_json.dumps(data))
+
+    _export_json(anomaly_pipe, MODEL_DIR / "anomaly.json")
+    _export_json(breach_pipe,  MODEL_DIR / "breach.json")
+    print(f"[train] Exported anomaly.json ({(MODEL_DIR/'anomaly.json').stat().st_size//1024} KB), breach.json ({(MODEL_DIR/'breach.json').stat().st_size//1024} KB)")
     print(f"[train] Saved anomaly.joblib ({a_kb:.1f} KB), breach.joblib ({b_kb:.1f} KB)")
 
     # ── Compute metrics ───────────────────────────────────────────────────
@@ -196,7 +215,7 @@ def run(days: int = 30, version: str | None = None) -> None:
     print(f"[train] Training history saved → {history_path}")
 
     # ── Register version in Supabase ──────────────────────────────────────
-    base = "http://localhost:8000"
+    base = os.getenv("RENDER_EXTERNAL_URL", "https://coldguard-ai.onrender.com")
     supabase.table("model_versions").insert({
         "version": ver,
         "anomaly_url": f"{base}/model/anomaly.joblib",
