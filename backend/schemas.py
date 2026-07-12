@@ -35,6 +35,9 @@ class TelemetryPayload(BaseModel):
     temperature_c: float = Field(..., example=4.3, description="Temperature in Celsius")
     humidity_pct: Optional[float] = Field(None, example=58.2, description="Relative humidity %, omit if sensor absent")
     presence: Optional[bool] = Field(None, example=True, description="Product presence (true=present, false=absent). Sent once per minute, omit if no presence sensor.")
+    minutes_above_limit: Optional[float] = Field(None, example=2.5, description="Cumulative minutes this product has been outside its safe temperature range (computed by python/main.py rolling buffer).")
+    anomaly_score: Optional[float] = Field(None, example=0.87, description="ML anomaly detector output 0.0–1.0. Omit if model not loaded.")
+    breach_probability: Optional[float] = Field(None, example=0.62, description="ML breach predictor output 0.0–1.0. Omit if model not loaded.")
 
 
 # ── Backend → Arduino/App ─────────────────────────────────────────────────────
@@ -68,6 +71,9 @@ class ReadingOut(BaseModel):
     received_at: datetime
     gap_seconds: Optional[float]
     continuity_ok: bool
+    minutes_above_limit: Optional[float]
+    anomaly_score: Optional[float]
+    breach_probability: Optional[float]
 
     class Config:
         from_attributes = True

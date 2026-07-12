@@ -1,0 +1,40 @@
+
+============================================================
+Version      : v20260712
+Trained at   : 2026-07-12 05:24:16 UTC
+Training days: 30
+Rows used    : 1000
+
+-- Anomaly Detector --
+  Accuracy   : 0.9947
+  F1 Score   : 0.5455
+  Samples    : 940  (anomalies: 8)
+  Model size : 425.3 KB
+
+-- Breach Predictor --
+  Accuracy   : 0.9785
+  F1 Score   : 0.8246
+  Recall     : 0.7015
+  Samples    : 930  (breaches: 67)
+  Model size : 53.4 KB
+============================================================
+
+============================================================
+Version      : v20260712
+Trained at   : 2026-07-12 05:25:22 UTC
+Training days: 30
+Rows used    : 43222
+
+-- Anomaly Detector --
+  Accuracy   : 0.9998
+  F1 Score   : 0.6667
+  Samples    : 43162  (anomalies: 11)
+  Model size : 425.1 KB
+
+-- Breach Predictor --
+  Accuracy   : 0.9979
+  F1 Score   : 0.5236
+  Recall     : 0.3876
+  Samples    : 43152  (breaches: 129)
+  Model size : 53.0 KB
+============================================================

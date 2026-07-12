@@ -27,12 +27,15 @@ Fields joined with `:` in that exact order. `humidity_pct` = `"null"` when absen
 """
 
 import os
+import threading
 from datetime import datetime, timezone
+from pathlib import Path as FilePath
 from typing import List, Literal, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Path, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 import auth
@@ -42,8 +45,10 @@ from models import create_tables
 
 load_dotenv()
 
-COOLOFF_WINDOW = int(os.getenv("COOLOFF_WINDOW_SECONDS", "300"))
-MAX_GAP = int(os.getenv("MAX_GAP_SECONDS", "70"))
+COOLOFF_WINDOW  = int(os.getenv("COOLOFF_WINDOW_SECONDS", "300"))
+MAX_GAP         = int(os.getenv("MAX_GAP_SECONDS", "70"))
+MODEL_DIR       = FilePath(__file__).parent / "models"
+MODEL_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(
     title="ColdGuard API",
@@ -59,9 +64,30 @@ app.add_middleware(
 )
 
 
+def _start_scheduler() -> None:
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        from ml.train import run as train_run
+
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(
+            lambda: train_run(days=30, epochs=15),
+            "cron",
+            day_of_week="sun",
+            hour=2,
+            minute=0,
+            id="weekly_retrain",
+        )
+        scheduler.start()
+        print("[scheduler] Weekly retraining job registered (Sunday 02:00 UTC)")
+    except Exception as exc:
+        print(f"[scheduler] Could not start scheduler: {exc}")
+
+
 @app.on_event("startup")
 def startup():
     create_tables()
+    threading.Thread(target=_start_scheduler, daemon=True).start()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -186,6 +212,9 @@ def ingest_telemetry(
         "reading_ts": reading_ts.isoformat(),
         "gap_seconds": gap_seconds,
         "continuity_ok": continuity_ok,
+        "minutes_above_limit": payload.minutes_above_limit,
+        "anomaly_score": payload.anomaly_score,
+        "breach_probability": payload.breach_probability,
     }
     inserted = supabase.table("sensor_readings").insert(row).execute()
     new_row = inserted.data[0]
@@ -627,3 +656,91 @@ def list_products():
             total_readings=count_map.get(pid, 0),
         ))
     return items
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ML model serving
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ModelVersionResponse(BaseModel):
+    version: str
+    trained_at: Optional[datetime]
+    anomaly_url: str
+    breach_url: str
+    rows_used: Optional[int]
+
+
+@app.get("/model/version", response_model=ModelVersionResponse, tags=["ML Models"],
+         summary="Latest trained model version and download URLs")
+def get_model_version():
+    """Returns the latest model version metadata. The Arduino python app polls
+    this on startup and every 24 h to check if a newer model is available."""
+    result = supabase.table("model_versions").select("*").order("trained_at", desc=True).limit(1).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="No models trained yet. Run POST /admin/train first.")
+    row = result.data[0]
+    return ModelVersionResponse(**row)
+
+
+@app.get("/model/anomaly.joblib", tags=["ML Models"], summary="Download anomaly detector model")
+def download_anomaly_model():
+    path = MODEL_DIR / "anomaly.joblib"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Anomaly model not found. Run POST /admin/train.")
+    return FileResponse(path, media_type="application/octet-stream", filename="anomaly.joblib")
+
+
+@app.get("/model/breach.joblib", tags=["ML Models"], summary="Download breach predictor model")
+def download_breach_model():
+    path = MODEL_DIR / "breach.joblib"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Breach model not found. Run POST /admin/train.")
+    return FileResponse(path, media_type="application/octet-stream", filename="breach.joblib")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Admin endpoints
+# ─────────────────────────────────────────────────────────────────────────────
+
+class SeedRequest(BaseModel):
+    days: int = Field(30, ge=1, le=365, description="Days of fake data to generate")
+    device_id: str = Field("CG-UNO-0001", description="Device ID to assign fake readings to")
+    product_id: Optional[str] = Field(None, description="Only seed this product (default: all)")
+
+
+class TrainRequest(BaseModel):
+    days: int = Field(30, ge=7, le=365, description="Days of training data to use")
+    epochs: int = Field(15, ge=1, le=100)
+    version: Optional[str] = Field(None, description="Version tag override (default: vYYYYMMDD)")
+
+
+@app.post("/admin/seed-fake-data", tags=["Admin"], summary="Seed sensor_readings with synthetic data")
+def seed_fake_data(req: SeedRequest):
+    """
+    Generates and inserts synthetic sensor readings into Supabase for testing
+    and model training. Runs in a background thread — returns immediately.
+
+    > **Note:** Open endpoint for demo. Restrict with `X-Admin-Secret` in production.
+    """
+    def _run():
+        from fake_data import run as seed_run
+        seed_run(days=req.days, device_id=req.device_id, product_id=req.product_id)
+
+    threading.Thread(target=_run, daemon=True).start()
+    return {"status": "started", "message": f"Seeding {req.days} days of fake data in background."}
+
+
+@app.post("/admin/train", tags=["Admin"], summary="Manually trigger model retraining")
+def trigger_training(req: TrainRequest):
+    """
+    Triggers model training in a background thread. Training takes 1–5 minutes
+    depending on data size. Check `GET /model/version` after completion.
+
+    > **Note:** Open endpoint for demo. Restrict with `X-Admin-Secret` in production.
+    """
+    def _run():
+        from ml.train import run as train_run
+        train_run(days=req.days, epochs=req.epochs, version=req.version)
+
+    threading.Thread(target=_run, daemon=True).start()
+    return {"status": "started", "message": "Model training started in background. Check /model/version when done."}
