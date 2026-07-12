@@ -30,7 +30,7 @@ ColdGuard AI is an end-to-end cold chain monitoring system for food, pharma, vac
 
 Cold chain failures cost the global pharma industry $35B/year and cause 25% of food waste in transit. Every spoiled vaccine, contaminated blood sample, and thawed frozen shipment is a ColdGuard failure we prevent.
 
-**Supported products:**
+**Sample products(that can be entered in this format , also a anomaly detector and breach predictor always works on background not a hard limit):**
 
 | Product | Safe Range | Max Breach |
 |---|---|---|
