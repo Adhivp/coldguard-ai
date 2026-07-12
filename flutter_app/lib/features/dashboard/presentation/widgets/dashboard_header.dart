@@ -10,16 +10,6 @@ class DashboardHeader extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final topPadding = MediaQuery.of(context).padding.top;
 
-    String greetingPrefix;
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      greetingPrefix = 'Good morning';
-    } else if (hour < 17) {
-      greetingPrefix = 'Good afternoon';
-    } else {
-      greetingPrefix = 'Good evening';
-    }
-
     return Padding(
       padding: EdgeInsets.fromLTRB(16.0, topPadding + 12.0, 16.0, 14.0),
       child: Row(
@@ -31,21 +21,7 @@ class DashboardHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '👋 $greetingPrefix!',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withOpacity(0.9),
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withOpacity(0.35),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                ),
+                Image.asset('assets/cg..png', height: 32, fit: BoxFit.contain),
                 const SizedBox(height: 2),
                 Text(
                   'ColdGuard AI',

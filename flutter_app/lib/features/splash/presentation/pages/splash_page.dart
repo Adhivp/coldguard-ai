@@ -538,18 +538,14 @@ class ScannerLogo extends StatelessWidget {
                 ),
               ],
             ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Glowing Shield
-                Icon(
-                  Icons.shield_rounded,
-                  color: primaryColor.withOpacity(0.25),
-                  size: 54,
+            child: ClipOval(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Image.asset(
+                  'assets/cg..png',
+                  fit: BoxFit.contain,
                 ),
-                // Ice-cold Snowflake
-                Icon(Icons.ac_unit_rounded, color: secondaryColor, size: 34),
-              ],
+              ),
             ),
           ),
 

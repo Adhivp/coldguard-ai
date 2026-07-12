@@ -109,7 +109,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           _messages.add(
             ChatMessageModel(
               text:
-                  "Hello! Welcome back to ColdGuard Local AI assistant (${activeModel.name}). Ask me anything about vaccine storage, temperature alerts, or logistics monitoring.",
+                  "Hello! Welcome back to ColdGuard Local AI assistant (${activeModel.name}). Ask me anything about product storage, temperature alerts, or logistics monitoring.",
               isUser: false,
               timestamp: DateTime.now(),
             ),
@@ -273,7 +273,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       _messages.add(
         ChatMessageModel(
           text:
-              "Hello! I am your ColdGuard AI assistant (${event.model.name}). Ask me anything about vaccine storage, temperature alerts, or logistics monitoring.",
+              "Hello! I am your ColdGuard AI assistant (${event.model.name}). Ask me anything about product storage, temperature alerts, or logistics monitoring.",
           isUser: false,
           timestamp: DateTime.now(),
         ),
