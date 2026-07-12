@@ -87,6 +87,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             final products = await sl<ScanRemoteDataSource>().getAllProducts();
             final contextPrompt =
                 "SYSTEM CONTEXT:\n"
+                "You are ColdGuard AI, a precise, helpful, on-device logistics assistant.\n"
+                "IMPORTANT: Keep your answers extremely concise, direct, and under 3-4 sentences. Do not use verbose preambles or greetings. Always complete your sentences.\n\n"
                 "Here is the real-time supply chain context fetched from the server:\n\n"
                 "Active Products:\n"
                 "${products.map((p) => '- Product ID: ${p.productId}, Device: ${p.deviceId}, Temp: ${p.latestTemperature}°C, Readings: ${p.totalReadings} points, Last Sync: ${p.latestReadingTs}').join('\n')}\n\n"
@@ -253,6 +255,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
         final contextPrompt =
             "SYSTEM CONTEXT:\n"
+            "You are ColdGuard AI, a precise, helpful, on-device logistics assistant.\n"
+            "IMPORTANT: Keep your answers extremely concise, direct, and under 3-4 sentences. Do not use verbose preambles or greetings. Always complete your sentences.\n\n"
             "Here is the real-time supply chain context fetched from the server:\n\n"
             "Active Products:\n"
             "${products.map((p) => '- Product ID: ${p.productId}, Device: ${p.deviceId}, Temp: ${p.latestTemperature}°C, Readings: ${p.totalReadings} points, Last Sync: ${p.latestReadingTs}').join('\n')}\n\n"
@@ -369,8 +373,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         debugPrint('[ChatBloc] Failed to fetch dynamic product context: $e');
       }
 
+      final queryToSend = "$processedMessage\n\n(Remember: Be very concise and make sure to finish your response properly.)";
       await _inferenceChat!.addQuery(
-        Message.text(text: processedMessage, isUser: true),
+        Message.text(text: queryToSend, isUser: true),
       );
 
       final buffer = StringBuffer();

@@ -49,7 +49,10 @@ class ModelInfo {
 
   /// Whether this model has any special capabilities
   bool get hasSpecialCapabilities =>
-      supportsVision || supportsThinking || supportsFunctionCalling || supportsAudio;
+      supportsVision ||
+      supportsThinking ||
+      supportsFunctionCalling ||
+      supportsAudio;
 }
 
 /// Complete catalog of supported models.
@@ -62,8 +65,10 @@ class ModelCatalog {
       id: 'gemma4_e2b',
       name: 'Gemma 4 E2B',
       family: 'Gemma 4',
-      description: 'Next-gen multimodal chat — text, image, audio with thinking mode',
-      url: 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
+      description:
+          'Next-gen multimodal chat — text, image, audio with thinking mode',
+      url:
+          'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
       sizeGB: 2.4,
       modelType: ModelType.gemmaIt,
       fileType: ModelFileType.task,
@@ -71,7 +76,7 @@ class ModelCatalog {
       supportsThinking: true,
       supportsFunctionCalling: true,
       supportsAudio: false,
-      maxTokens: 2048,
+      maxTokens: 300,
     ),
   ];
 

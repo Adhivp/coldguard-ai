@@ -58,25 +58,15 @@ class SettingsScreen extends StatelessWidget {
                     Container(
                       width: 80,
                       height: 80,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF00ACC1), Color(0xFF0F52FF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0x3300ACC1),
-                            blurRadius: 16,
-                            offset: Offset(0, 8),
+
+                      child: ClipOval(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Image.asset(
+                            'assets/cg..png',
+                            fit: BoxFit.contain,
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.ac_unit_rounded,
-                        color: Colors.white,
-                        size: 40,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),

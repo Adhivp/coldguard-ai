@@ -107,20 +107,20 @@ class _AIAnalysisSheetState extends State<AIAnalysisSheet> {
     switch (featureIndex) {
       case 0:
         return "You are a cold chain compliance auditor. Based on the following product data, generate a compliance report. "
-            "State the verdict (PASS, FAIL, or WARNING), then explain your reasoning in detail. "
-            "Reference specific temperature readings and storage requirements.\n\n$context";
+            "State the verdict (PASS, FAIL, or WARNING), then briefly explain your reasoning in under 3-4 sentences. "
+            "Be concise and make sure to finish your response properly.\n\n$context";
       case 1:
         return "You are a cold chain risk analyst. Based on the following product data, assess the risk level as LOW, MEDIUM, HIGH, or CRITICAL. "
-            "Explain contributing factors including temperature deviations, excursion count, and health score trends.\n\n$context";
+            "Briefly explain contributing factors in under 3 sentences. Be concise and make sure to finish your response properly.\n\n$context";
       case 2:
         return "You are a food/pharma shelf life scientist. Based on the following product data, estimate the remaining usable shelf life. "
-            "Explain how temperature excursions impact the original shelf life and what adjustments should be made.\n\n$context";
+            "Briefly explain the impact of temperature excursions in under 3 sentences. Be concise and make sure to finish your response properly.\n\n$context";
       case 3:
-        return "You are a cold chain logistics advisor. Based on the following product data, provide 3-5 specific, actionable recommendations "
-            "for the logistics team to improve cold chain integrity. Format as a numbered list.\n\n$context";
+        return "You are a cold chain logistics advisor. Based on the following product data, provide 2-3 specific, actionable recommendations "
+            "for the logistics team. Keep them short, concise, and complete.\n\n$context";
       case 4:
-        return "You are a cold chain operations manager. Write a concise executive summary (3-4 paragraphs) of this product's cold chain status. "
-            "Include key metrics, current condition, risk factors, and next steps. Make it suitable for a stakeholder report.\n\n$context";
+        return "You are a cold chain operations manager. Write a concise executive summary (1 short paragraph, under 4 sentences) of this product's cold chain status. "
+            "Include key metrics, current condition, and risk factors. Be concise and make sure to finish your response properly.\n\n$context";
       default:
         return context;
     }
