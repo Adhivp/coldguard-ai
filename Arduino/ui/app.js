@@ -1,11 +1,12 @@
 var socket = io();
 
-var statusEl = document.getElementById('status');
-var tempEl = document.getElementById('temperature');
-var tempUnitEl = document.querySelector('.temp-unit');
-var humidityEl = document.getElementById('humidity');
-var updatedEl = document.getElementById('updated');
+var statusEl    = document.getElementById('status');
+var tempEl      = document.getElementById('temperature');
+var tempUnitEl  = document.querySelector('.temp-unit');
+var humidityEl  = document.getElementById('humidity');
+var updatedEl   = document.getElementById('updated');
 var unitToggleBtn = document.getElementById('unit-toggle');
+var rfidBadgeEl = document.getElementById('rfid-badge');
 
 var useFahrenheit = false;
 var lastTempC = null;
@@ -38,30 +39,31 @@ socket.on('temperature_update', function (data) {
     humidityEl.textContent = data.humidity.toFixed(1) + ' %';
   }
 
-  var now = new Date();
-  updatedEl.textContent = now.toLocaleTimeString();
+  var rfidPresent = data.rfid_present === true;
+  rfidBadgeEl.textContent   = rfidPresent ? 'PRESENT' : 'ABSENT';
+  rfidBadgeEl.className     = 'rfid-badge ' + (rfidPresent ? 'present' : 'absent');
+
+  updatedEl.textContent = new Date().toLocaleTimeString();
 
   tempEl.classList.remove('pulse');
-  // Force reflow so the animation can replay on every update
   void tempEl.offsetWidth;
   tempEl.classList.add('pulse');
 });
 
 socket.on('temperature_error', function (data) {
-  tempEl.textContent = '--';
+  tempEl.textContent    = '--';
   updatedEl.textContent = (data && data.message) ? data.message : 'Sensor error';
 });
 
 // ── Rendering ───────────────────────────────────────────────
 function renderTemperature() {
   if (lastTempC === null) return;
-
   if (useFahrenheit) {
     var f = (lastTempC * 9) / 5 + 32;
-    tempEl.textContent = f.toFixed(1);
+    tempEl.textContent    = f.toFixed(1);
     tempUnitEl.textContent = '°F';
   } else {
-    tempEl.textContent = lastTempC.toFixed(1);
+    tempEl.textContent    = lastTempC.toFixed(1);
     tempUnitEl.textContent = '°C';
   }
 }

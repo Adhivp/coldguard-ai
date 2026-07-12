@@ -20,17 +20,16 @@ BACKEND_URL      = "https://coldguard-ai.onrender.com/telemetry"
 DEVICE_ID        = "CG-UNO-0001"
 PRODUCT_ID       = "PROD-001"
 FIRMWARE_VERSION = "1.0.0"
-# 64-char hex secret from POST /admin/provision
 SECRET_HEX       = "16a4fc06c7bbacd3fb82f3ab972d2b9acd4ea1ee0e508d04ad43aae16fc37d14"
 
-POLL_INTERVAL_SECONDS  = 1.0   # UI refresh rate + per-second buffer
-BATCH_SIZE             = 60    # flush every 60 readings (1 minute)
+POLL_INTERVAL_SECONDS = 1.0
+BATCH_SIZE            = 60
 
 # ── State ─────────────────────────────────────────────────────────────────────
-_batch: list         = []
-_batch_lock          = threading.Lock()
+_batch: list          = []
+_batch_lock           = threading.Lock()
 _latest_reading: dict = {}
-_reading_lock        = threading.Lock()
+_reading_lock         = threading.Lock()
 
 
 # ── HMAC-SHA256 auth ──────────────────────────────────────────────────────────
@@ -42,7 +41,7 @@ def _build_signature(timestamp_utc: str, nonce: str, temp_c: float, humid_pct) -
     return hmac.new(key, message.encode(), hashlib.sha256).hexdigest()
 
 
-# ── Backend sender – posts one reading from the batch ─────────────────────────
+# ── Backend sender ────────────────────────────────────────────────────────────
 
 def _send_reading(temp_c: float, humid_pct, timestamp_utc: str):
     nonce     = secrets.token_hex(16)
@@ -77,7 +76,6 @@ def _send_reading(temp_c: float, humid_pct, timestamp_utc: str):
 
 
 def _flush_batch(batch: list):
-    """Send all 60 buffered readings to the backend one by one on a background thread."""
     print(f"[batch] Flushing {len(batch)} readings to backend...")
     for entry in batch:
         _send_reading(entry["temperature_c"], entry["humidity_pct"], entry["timestamp_utc"])
@@ -100,7 +98,7 @@ def _send_ui(event, data, client=None):
         ui.send_message(event, data)
 
 
-# ── Poll loop (every 1 second) ────────────────────────────────────────────────
+# ── Poll loop ─────────────────────────────────────────────────────────────────
 
 def _poll_loop():
     while True:
@@ -110,30 +108,29 @@ def _poll_loop():
             time.sleep(POLL_INTERVAL_SECONDS)
             continue
 
-        temp_c    = data.get("temperature_c")
-        humid_pct = data.get("humidity")
+        temp_c        = data.get("temperature_c")
+        humid_pct     = data.get("humidity")
+        rfid_present  = data.get("rfid_present", False)
         timestamp_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
-        # Update cache for on-demand UI requests
+        print(f"[poll] T={temp_c:.2f}°C H={humid_pct:.1f}% RFID={'YES' if rfid_present else 'NO'}")
+
         with _reading_lock:
             _latest_reading.update(data)
 
-        # Push live to browser UI every second
         _send_ui("temperature_update", data)
 
-        # Buffer this second's reading
         batch_to_flush = None
         with _batch_lock:
             _batch.append({
-                "temperature_c":  round(temp_c, 2),
-                "humidity_pct":   round(humid_pct, 2) if humid_pct is not None else None,
-                "timestamp_utc":  timestamp_utc,
+                "temperature_c": round(temp_c, 2),
+                "humidity_pct":  round(humid_pct, 2) if humid_pct is not None else None,
+                "timestamp_utc": timestamp_utc,
             })
             if len(_batch) >= BATCH_SIZE:
                 batch_to_flush = list(_batch)
                 _batch.clear()
 
-        # Once 60 readings collected, flush to backend on a separate thread
         if batch_to_flush:
             threading.Thread(target=_flush_batch, args=(batch_to_flush,), daemon=True).start()
 
@@ -143,7 +140,6 @@ def _poll_loop():
 # ── On-demand UI request ──────────────────────────────────────────────────────
 
 def on_request_temperature(client, data=None):
-    """Browser asked for an immediate reading (e.g. on page load)."""
     with _reading_lock:
         cached = dict(_latest_reading)
     if cached:

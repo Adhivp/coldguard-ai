@@ -1,9 +1,10 @@
 profiles:
   default:
-    fqbn: arduino:zephyr:uno_r4_wifi
+    fqbn: arduino:zephyr:unoq
     platforms:
       - platform: arduino:zephyr
     libraries:
+      - MFRC522 (1.4.12)
       - dependency: Arduino_RPClite (0.2.1)
       - dependency: ArxContainer (0.7.0)
       - dependency: ArxTypeTraits (0.3.2)

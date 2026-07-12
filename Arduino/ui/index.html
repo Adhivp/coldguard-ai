@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🌡️ Thermal Sensor</title>
+  <title>RFID Cold Guard</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header>
-    <h1>🌡️ Thermal Sensor</h1>
+    <h1>RFID Cold Guard</h1>
     <span id="status" class="status connecting">Connecting…</span>
   </header>
 
@@ -28,6 +28,12 @@
           <span id="humidity" class="humidity-value">-- %</span>
         </div>
       </div>
+
+      <div class="rfid-row">
+        <span class="reading-label">RFID Tag</span>
+        <span id="rfid-badge" class="rfid-badge absent">ABSENT</span>
+      </div>
+
       <div class="updated-row">
         <span class="meta-label">Last updated</span>
         <span id="updated" class="meta-value">--</span>
