@@ -7,6 +7,12 @@
 <p align="center"><em>Every degree matters. Every second counts. Every product deserves a certificate.</em></p>
 
 <p align="center">
+  <a href="https://drive.google.com/file/d/1k3bO6LLqOj8TufVm8Sb9lZFkQHzL4Wzo/view?usp=sharing">
+    <img src="https://img.shields.io/badge/Download_APK-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Download APK"/>
+  </a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Arduino-00979D?style=for-the-badge&logo=arduino&logoColor=white" alt="Arduino"/>
   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"/>
