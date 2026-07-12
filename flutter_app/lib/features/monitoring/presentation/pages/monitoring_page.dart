@@ -337,7 +337,7 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Cold Chain Products',
+                                      'Products',
                                       style: GoogleFonts.outfit(
                                         fontSize: isMobile ? 24 : 28,
                                         fontWeight: FontWeight.bold,

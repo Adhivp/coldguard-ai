@@ -58,7 +58,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
       final data = await remoteDataSource.getProductGraphData(
         productId: widget.result.product.productId,
         zoom: _zoom,
-        date: _selectedDate,
+        date: _zoom == 'day' ? null : _selectedDate,
         hour: _zoom == 'minute' || _zoom == 'second' ? _selectedHour : null,
         minute: _zoom == 'second' ? _selectedMinute : null,
         page: _currentPage,
@@ -1085,10 +1085,10 @@ class _ScanResultPageState extends State<ScanResultPage> {
                     _zoom == 'day'
                         ? 'Daily Telemetry'
                         : _zoom == 'hour'
-                        ? 'Hourly: $_selectedDate'
+                        ? 'Hourly'
                         : _zoom == 'minute'
-                        ? 'Minutely: $_selectedDate $_selectedHour:00'
-                        : 'Raw Data: $_selectedDate $_selectedHour:${_selectedMinute.toString().padLeft(2, '0')}',
+                        ? 'Minutely'
+                        : 'Raw Data',
                     style: GoogleFonts.outfit(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -1098,43 +1098,8 @@ class _ScanResultPageState extends State<ScanResultPage> {
                 ],
               ),
 
-              // Zoom Quick Selector Chips
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: ['day', 'hour', 'minute', 'second'].map((z) {
-                  final isSelected = _zoom == z;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _zoom = z;
-                        _currentPage = 1;
-                        _fetchGraphData();
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(left: 4),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected ? _accent : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        z.toUpperCase(),
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected
-                              ? Colors.white
-                              : const Color(0xFF64748B),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+              // Breadcrumbs Drill-Down Selection
+              _buildBreadcrumbs(),
             ],
           ),
           const SizedBox(height: 20),
@@ -1216,6 +1181,144 @@ class _ScanResultPageState extends State<ScanResultPage> {
           // Summary Stats Row (Avg, Min, Max, Excursions)
           if (_graphData != null) _buildSummaryRow(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumbs() {
+    final List<Widget> items = [];
+
+    // All Days (Root)
+    final bool isDayActive = _zoom == 'day';
+    items.add(
+      _buildBreadcrumbItem(
+        label: 'All Days',
+        isActive: isDayActive,
+        onTap: isDayActive
+            ? null
+            : () {
+                setState(() {
+                  _zoom = 'day';
+                  _currentPage = 1;
+                  _fetchGraphData();
+                });
+              },
+      ),
+    );
+
+    // Date
+    if (_zoom == 'hour' || _zoom == 'minute' || _zoom == 'second') {
+      items.add(_buildBreadcrumbSeparator());
+      final bool isHourActive = _zoom == 'hour';
+      items.add(
+        _buildBreadcrumbItem(
+          label: _selectedDate,
+          isActive: isHourActive,
+          onTap: isHourActive
+              ? null
+              : () {
+                  setState(() {
+                    _zoom = 'hour';
+                    _currentPage = 1;
+                    _fetchGraphData();
+                  });
+                },
+        ),
+      );
+    }
+
+    // Hour
+    if (_zoom == 'minute' || _zoom == 'second') {
+      items.add(_buildBreadcrumbSeparator());
+      final bool isMinuteActive = _zoom == 'minute';
+      items.add(
+        _buildBreadcrumbItem(
+          label: '${_selectedHour.toString().padLeft(2, '0')}:00',
+          isActive: isMinuteActive,
+          onTap: isMinuteActive
+              ? null
+              : () {
+                  setState(() {
+                    _zoom = 'minute';
+                    _currentPage = 1;
+                    _fetchGraphData();
+                  });
+                },
+        ),
+      );
+    }
+
+    // Minute
+    if (_zoom == 'second') {
+      items.add(_buildBreadcrumbSeparator());
+      items.add(
+        _buildBreadcrumbItem(
+          label: '${_selectedMinute.toString().padLeft(2, '0')}m',
+          isActive: true,
+          onTap: null,
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: items,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumbItem({
+    required String label,
+    required bool isActive,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+            color: isActive ? _accent : const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumbSeparator() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 2),
+      child: Icon(
+        Icons.chevron_right_rounded,
+        size: 14,
+        color: Color(0xFF94A3B8),
       ),
     );
   }

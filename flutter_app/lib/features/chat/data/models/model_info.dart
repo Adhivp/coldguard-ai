@@ -76,7 +76,7 @@ class ModelCatalog {
       supportsThinking: true,
       supportsFunctionCalling: true,
       supportsAudio: false,
-      maxTokens: 300,
+      maxTokens: 2048,
     ),
   ];
 

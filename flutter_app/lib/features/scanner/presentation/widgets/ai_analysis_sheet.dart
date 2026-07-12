@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:code_card_ai/core/di/injection_container.dart';
+import 'package:code_card_ai/core/utils/extensions.dart';
+
 import 'package:code_card_ai/features/chat/data/services/model_service.dart';
 import 'package:code_card_ai/features/chat/data/models/model_info.dart';
 import 'package:code_card_ai/features/scanner/data/models/scan_result_model.dart';
@@ -135,6 +137,10 @@ class _AIAnalysisSheetState extends State<AIAnalysisSheet> {
     });
 
     try {
+      // Clear previous query/response history so each feature is analyzed independently
+      // and doesn't overflow the model's token limits with accumulated context
+      await _analysisChat!.clearHistory();
+
       final prompt = _buildPrompt(index);
       await _analysisChat!.addQuery(
         Message.text(text: prompt, isUser: true),
@@ -457,7 +463,7 @@ class _AIAnalysisSheetState extends State<AIAnalysisSheet> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: MarkdownBody(
-                data: _results[index]!,
+                data: _results[index]!.cleanAiResponse(),
                 selectable: true,
                 styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
                   p: GoogleFonts.inter(

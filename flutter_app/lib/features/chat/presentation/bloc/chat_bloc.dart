@@ -111,7 +111,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           _messages.add(
             ChatMessageModel(
               text:
-                  "Hello! Welcome back to ColdGuard Local AI assistant (${activeModel.name}). Ask me anything about product storage, temperature alerts, or logistics monitoring.",
+                  "Hello! Welcome back to ColdGuard Local AI assistant (${activeModel.name}). Ask me anything about your product.",
               isUser: false,
               timestamp: DateTime.now(),
             ),
@@ -277,7 +277,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       _messages.add(
         ChatMessageModel(
           text:
-              "Hello! I am your ColdGuard AI assistant (${event.model.name}). Ask me anything about product storage, temperature alerts, or logistics monitoring.",
+              "Hello! I am your ColdGuard AI assistant (${event.model.name}). Ask me anything about your product.",
           isUser: false,
           timestamp: DateTime.now(),
         ),
@@ -373,7 +373,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         debugPrint('[ChatBloc] Failed to fetch dynamic product context: $e');
       }
 
-      final queryToSend = "$processedMessage\n\n(Remember: Be very concise and make sure to finish your response properly.)";
+      final queryToSend =
+          "$processedMessage\n\n(Remember: Be very concise and make sure to finish your response properly.)";
       await _inferenceChat!.addQuery(
         Message.text(text: queryToSend, isUser: true),
       );

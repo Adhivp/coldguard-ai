@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:code_card_ai/core/di/injection_container.dart';
+import 'package:code_card_ai/core/utils/extensions.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
 import '../bloc/chat_state.dart';
@@ -239,8 +240,8 @@ class _ChatPageViewState extends State<ChatPageView> {
                     ),
                   ),
                   if (state.messages.length == 1 && !state.isTyping)
-                    _buildSuggestions(context),
-                  _buildInputBar(context, state.isTyping),
+                    // _buildSuggestions(context),
+                    _buildInputBar(context, state.isTyping),
                 ],
               ),
             ),
@@ -386,7 +387,7 @@ class _ChatPageViewState extends State<ChatPageView> {
                               ),
                             )
                           : MarkdownBody(
-                              data: message.text,
+                              data: message.text.cleanAiResponse(),
                               selectable: true,
                               styleSheet: MarkdownStyleSheet.fromTheme(theme)
                                   .copyWith(
