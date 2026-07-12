@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="arduino/cg..png" width="120" alt="ColdGuard AI Logo"/>
+  <img src="https://github.com/Adhivp/coldguard-ai/blob/main/Arduino/cg..png?raw=true" width="120" alt="ColdGuard AI Logo"/>
 </p>
 
 <h1 align="center">ColdGuard AI</h1>
@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter"/>
   <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase"/>
   <img src="https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white" alt="scikit-learn"/>
-  <img src="https://img.shields.io/badge/Qualcomm_AI_Hub-3253DC?style=for-the-badge&logo=qualcomm&logoColor=white" alt="Qualcomm AI Hub"/>
+  <img src="https://img.shields.io/badge/Qualcomm_AI_Hub-3253DC?style=for-the-badge&logoColor=white" alt="Qualcomm AI Hub"/>
   <img src="https://img.shields.io/badge/Gemma_4_E2B-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemma 4 E2B"/>
   <img src="https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=white" alt="Render"/>
 </p>
