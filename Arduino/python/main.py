@@ -283,9 +283,10 @@ def _poll_loop() -> None:
         # ── Update inference buffer ───────────────────────────────────────────
         with _buffer_lock:
             _inference_buffer.append({
-                "temperature_c": temp_c,
-                "humidity_pct": humid_pct,
-                "gap_seconds": POLL_INTERVAL_SECONDS,
+                "temperature_c":      temp_c,
+                "humidity_pct":       humid_pct,
+                "gap_seconds":        POLL_INTERVAL_SECONDS,
+                "minutes_above_limit": _minutes_above_limit,
             })
             buf_snapshot = list(_inference_buffer)
 
@@ -339,7 +340,7 @@ def _poll_loop() -> None:
 
 # ── On-demand UI request ──────────────────────────────────────────────────────
 
-def on_request_temperature(client, **_):
+def on_request_temperature(client, data=None):
     with _reading_lock:
         cached = dict(_latest_reading)
     if cached:

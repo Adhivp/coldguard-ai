@@ -21,7 +21,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException, Header
 from database import supabase
 
-TIMESTAMP_TOLERANCE = int(os.getenv("TIMESTAMP_TOLERANCE_SECONDS", "70"))
+TIMESTAMP_TOLERANCE = int(os.getenv("TIMESTAMP_TOLERANCE_SECONDS", "300"))
 
 
 def _get_device_secret(device_id: str) -> str:
@@ -80,8 +80,8 @@ def _build_message(
     temperature_c: float,
     humidity_pct: float | None,
 ) -> str:
-    humidity_str = str(humidity_pct) if humidity_pct is not None else "null"
-    return f"{device_id}:{product_id}:{timestamp_utc}:{nonce}:{firmware_version}:{temperature_c}:{humidity_str}"
+    humidity_str = f"{humidity_pct:.2f}" if humidity_pct is not None else "null"
+    return f"{device_id}:{product_id}:{timestamp_utc}:{nonce}:{firmware_version}:{temperature_c:.2f}:{humidity_str}"
 
 
 def verify_request(
