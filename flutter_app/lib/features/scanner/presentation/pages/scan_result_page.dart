@@ -1,11 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:code_card_ai/core/di/injection_container.dart';
 import 'package:code_card_ai/features/scanner/data/models/scan_result_model.dart';
+import 'package:code_card_ai/features/scanner/data/models/telemetry_graph_model.dart';
+import 'package:code_card_ai/features/scanner/data/datasources/scan_remote_datasource.dart';
+import 'package:code_card_ai/features/scanner/presentation/widgets/ai_analysis_sheet.dart';
+import 'package:code_card_ai/features/chat/data/services/model_service.dart';
 
-class ScanResultPage extends StatelessWidget {
+class ScanResultPage extends StatefulWidget {
   final ScanResultModel result;
 
   const ScanResultPage({super.key, required this.result});
+
+  @override
+  State<ScanResultPage> createState() => _ScanResultPageState();
+}
+
+class _ScanResultPageState extends State<ScanResultPage> {
+  TelemetryGraphModel? _graphData;
+  bool _isLoadingGraph = false;
+  String _errorMessage = '';
+  String _zoom = 'day'; // 'day', 'hour', 'minute', 'second'
+  String _selectedDate = '2026-07-12';
+  int _selectedHour = 14;
+  int _selectedMinute = 30;
+  int _currentPage = 1;
+  bool _showTemperature = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize date from last reading if available, else use today's date
+    if (widget.result.current.lastUpdated.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(widget.result.current.lastUpdated);
+        _selectedDate =
+            "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
+        _selectedHour = dt.hour;
+        _selectedMinute = dt.minute;
+      } catch (_) {
+        _selectedDate = '2026-07-12';
+      }
+    } else {
+      _selectedDate = '2026-07-12';
+    }
+    _fetchGraphData();
+  }
+
+  Future<void> _fetchGraphData() async {
+    setState(() {
+      _isLoadingGraph = true;
+      _errorMessage = '';
+    });
+    try {
+      final remoteDataSource = sl<ScanRemoteDataSource>();
+      final data = await remoteDataSource.getProductGraphData(
+        productId: widget.result.product.productId,
+        zoom: _zoom,
+        date: _selectedDate,
+        hour: _zoom == 'minute' || _zoom == 'second' ? _selectedHour : null,
+        minute: _zoom == 'second' ? _selectedMinute : null,
+        page: _currentPage,
+        pageSize: 30,
+      );
+      setState(() {
+        _graphData = data;
+        _isLoadingGraph = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoadingGraph = false;
+      });
+    }
+  }
 
   // App accent color
   static const Color _accent = Color(0xFF00ACC1);
@@ -27,9 +96,9 @@ class ScanResultPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final product = result.product;
-    final current = result.current;
-    final life = result.life;
+    final product = widget.result.product;
+    final current = widget.result.current;
+    final life = widget.result.life;
 
     final bool isOk = current.status == 'OK';
     final Color statusColor = isOk
@@ -41,6 +110,7 @@ class ScanResultPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      floatingActionButton: _buildAIFab(context),
       body: CustomScrollView(
         slivers: [
           // Gradient App Bar
@@ -202,6 +272,9 @@ class ScanResultPage extends StatelessWidget {
                         _buildDetailRow('Storage', product.storageRequirement),
                         _buildDetailRow('Location', product.currentLocation),
 
+                        // AI Quick Badge
+                        _buildAIQuickBadge(current, life),
+
                         // Local product hero image
                         (() {
                           final imagePath = _getProductAsset(product.name);
@@ -241,6 +314,11 @@ class ScanResultPage extends StatelessWidget {
                       ],
                     ),
                   ),
+
+                  // Smart Alert Banner (conditional)
+                  if (!isOk || life.totalExcursions > 0)
+                    _buildSmartAlertBanner(current, life, product),
+
                   const SizedBox(height: 24),
 
                   // 2. Live Conditions
@@ -385,6 +463,10 @@ class ScanResultPage extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 24),
+
+                  // Telemetry History Graph
+                  _buildGraphCard(),
                   const SizedBox(height: 24),
 
                   // 4. Shipment Transit Timeline
@@ -880,5 +962,826 @@ class ScanResultPage extends StatelessWidget {
     } catch (_) {
       return isoString;
     }
+  }
+
+  Widget _buildGraphCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: _accent.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Title
+          // Section Title
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildSectionTitle('Environmental Telemetry'),
+
+              // Temp / Humidity Toggle
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(3),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildMetricToggleBtn(true, 'Temp'),
+                    _buildMetricToggleBtn(false, 'Humidity'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Interactive Hint Banner
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.touch_app_rounded,
+                  color: Color(0xFF1D4ED8),
+                  size: 14,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Interactive: Tap chart points to drill down from Day ➔ Hour ➔ Minute ➔ Second.',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1D4ED8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Zoom Level Indicators & Breadcrumbs
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              // Zoom Level Title
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_zoom != 'day') ...[
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (_zoom == 'second') {
+                            _zoom = 'minute';
+                          } else if (_zoom == 'minute') {
+                            _zoom = 'hour';
+                          } else if (_zoom == 'hour') {
+                            _zoom = 'day';
+                          }
+                          _currentPage = 1;
+                          _fetchGraphData();
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: _accentLight,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_rounded,
+                          size: 14,
+                          color: _accent,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    _zoom == 'day'
+                        ? 'Daily Telemetry'
+                        : _zoom == 'hour'
+                        ? 'Hourly: $_selectedDate'
+                        : _zoom == 'minute'
+                        ? 'Minutely: $_selectedDate $_selectedHour:00'
+                        : 'Raw Data: $_selectedDate $_selectedHour:${_selectedMinute.toString().padLeft(2, '0')}',
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Zoom Quick Selector Chips
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: ['day', 'hour', 'minute', 'second'].map((z) {
+                  final isSelected = _zoom == z;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _zoom = z;
+                        _currentPage = 1;
+                        _fetchGraphData();
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(left: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected ? _accent : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        z.toUpperCase(),
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected
+                              ? Colors.white
+                              : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Main Chart View area
+          SizedBox(
+            height: 220,
+            child: _isLoadingGraph
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(_accent),
+                    ),
+                  )
+                : _errorMessage.isNotEmpty
+                ? _errorMessage.contains('404')
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF1F5F9),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.cloud_off_rounded,
+                                  color: Color(0xFF94A3B8),
+                                  size: 32,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No Telemetry Data Found (404)',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF475569),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24.0,
+                                ),
+                                child: Text(
+                                  'The server returned no telemetry points for this selection.',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: const Color(0xFF94A3B8),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            'Error loading graph: $_errorMessage',
+                            style: GoogleFonts.inter(color: Colors.redAccent),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                : _graphData == null || _graphData!.points.isEmpty
+                ? Center(
+                    child: Text(
+                      'No telemetry points recorded.',
+                      style: GoogleFonts.inter(color: const Color(0xFF64748B)),
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: _buildLineChart(),
+                  ),
+          ),
+          const SizedBox(height: 16),
+
+          // Summary Stats Row (Avg, Min, Max, Excursions)
+          if (_graphData != null) _buildSummaryRow(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricToggleBtn(bool isTemp, String label) {
+    final isSelected = _showTemperature == isTemp;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _showTemperature = isTemp;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? _accent : const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLineChart() {
+    final points = _graphData!.points;
+
+    // Sort points chronologically to draw the line correctly
+    final sortedPoints = List<TelemetryPoint>.from(points)
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    final List<FlSpot> spots = [];
+    for (int i = 0; i < sortedPoints.length; i++) {
+      final p = sortedPoints[i];
+      final val = _showTemperature ? p.temperature : p.humidity;
+      spots.add(FlSpot(i.toDouble(), val));
+    }
+
+    // Determine min and max Y for better spacing
+    double minY = _showTemperature ? 0.0 : 0.0;
+    double maxY = _showTemperature ? 40.0 : 100.0;
+    if (spots.isNotEmpty) {
+      final values = spots.map((s) => s.y).toList();
+      final actualMin = values.reduce((a, b) => a < b ? a : b);
+      final actualMax = values.reduce((a, b) => a > b ? a : b);
+      minY = (actualMin - 2.0).clamp(_showTemperature ? -40.0 : 0.0, 100.0);
+      maxY = (actualMax + 2.0).clamp(_showTemperature ? -40.0 : 0.0, 100.0);
+    }
+
+    final chartColor = _showTemperature ? _accent : const Color(0xFF0F52FF);
+
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: ((maxY - minY) / 4).clamp(1.0, 50.0),
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: const Color(0xFFF1F5F9), strokeWidth: 1),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 36,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  "${value.toStringAsFixed(0)}${_showTemperature ? '°C' : '%'}",
+                  style: GoogleFonts.inter(
+                    fontSize: 9,
+                    color: const Color(0xFF94A3B8),
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 22,
+              interval: (sortedPoints.length / 4).clamp(1.0, 100.0),
+              getTitlesWidget: (value, meta) {
+                final idx = value.toInt();
+                if (idx >= 0 && idx < sortedPoints.length) {
+                  final t = sortedPoints[idx].timestamp;
+                  String label = "";
+                  if (_zoom == 'day') {
+                    label = "${t.day}/${t.month}";
+                  } else if (_zoom == 'hour') {
+                    label = "${t.hour}:00";
+                  } else if (_zoom == 'minute') {
+                    label = "${t.hour}:${t.minute.toString().padLeft(2, '0')}";
+                  } else {
+                    label =
+                        "${t.minute}:${t.second.toString().padLeft(2, '0')}";
+                  }
+                  return Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize: 8.5,
+                      color: const Color(0xFF94A3B8),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        lineTouchData: LineTouchData(
+          enabled: true,
+          handleBuiltInTouches: true,
+          getTouchedSpotIndicator:
+              (LineChartBarData barData, List<int> spotIndexes) {
+                return spotIndexes.map((spotIndex) {
+                  return TouchedSpotIndicatorData(
+                    FlLine(
+                      color: chartColor.withOpacity(0.3),
+                      strokeWidth: 2,
+                      dashArray: [5, 5],
+                    ),
+                    FlDotData(
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 6,
+                          color: chartColor,
+                          strokeWidth: 2,
+                          strokeColor: Colors.white,
+                        );
+                      },
+                    ),
+                  );
+                }).toList();
+              },
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (_) => const Color(0xFF0F172A).withOpacity(0.9),
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((touchedSpot) {
+                final idx = touchedSpot.x.toInt();
+                if (idx >= 0 && idx < sortedPoints.length) {
+                  final p = sortedPoints[idx];
+                  final timeStr =
+                      "${p.timestamp.hour.toString().padLeft(2, '0')}:${p.timestamp.minute.toString().padLeft(2, '0')}:${p.timestamp.second.toString().padLeft(2, '0')}";
+                  final statusStr = p.continuityOk ? "🟢 OK" : "🔴 EXCURSION";
+                  final actionStr = _zoom == 'second'
+                      ? ""
+                      : "\n👉 Tap point to zoom in";
+                  return LineTooltipItem(
+                    "${_showTemperature ? 'Temp' : 'Hum'}: ${touchedSpot.y.toStringAsFixed(1)}${_showTemperature ? '°C' : '%'}\nTime: $timeStr\n$statusStr$actionStr",
+                    GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                }
+                return null;
+              }).toList();
+            },
+          ),
+          touchCallback: (FlTouchEvent event, LineTouchResponse? response) {
+            if (event is FlTapUpEvent &&
+                response != null &&
+                response.lineBarSpots != null) {
+              final spot = response.lineBarSpots!.first;
+              final idx = spot.x.toInt();
+              if (idx >= 0 && idx < sortedPoints.length) {
+                final point = sortedPoints[idx];
+                _handleDrillIn(point);
+              }
+            }
+          },
+        ),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: chartColor,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                colors: [
+                  chartColor.withOpacity(0.15),
+                  chartColor.withOpacity(0.0),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                final p = sortedPoints[index];
+                if (!p.continuityOk) {
+                  return FlDotCirclePainter(
+                    radius: 5,
+                    color: const Color(0xFFEF4444),
+                    strokeWidth: 2,
+                    strokeColor: Colors.white,
+                  );
+                }
+                return FlDotCirclePainter(
+                  radius: 3,
+                  color: chartColor,
+                  strokeWidth: 1.5,
+                  strokeColor: Colors.white,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleDrillIn(TelemetryPoint point) {
+    if (_zoom == 'day') {
+      setState(() {
+        _zoom = 'hour';
+        _selectedDate =
+            "${point.timestamp.year}-${point.timestamp.month.toString().padLeft(2, '0')}-${point.timestamp.day.toString().padLeft(2, '0')}";
+        _currentPage = 1;
+        _fetchGraphData();
+      });
+    } else if (_zoom == 'hour') {
+      setState(() {
+        _zoom = 'minute';
+        _selectedHour = point.timestamp.hour;
+        _currentPage = 1;
+        _fetchGraphData();
+      });
+    } else if (_zoom == 'minute') {
+      setState(() {
+        _zoom = 'second';
+        _selectedMinute = point.timestamp.minute;
+        _currentPage = 1;
+        _fetchGraphData();
+      });
+    }
+  }
+
+  Widget _buildSummaryRow() {
+    final meta = _graphData!.meta;
+    return Column(
+      children: [
+        const Divider(color: Color(0xFFF1F5F9)),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildSummaryMetric(
+              'Avg Temp',
+              "${meta.avgTemperature.toStringAsFixed(1)}°C",
+            ),
+            _buildSummaryMetric(
+              'Min Temp',
+              "${meta.minTemperature.toStringAsFixed(1)}°C",
+            ),
+            _buildSummaryMetric(
+              'Max Temp',
+              "${meta.maxTemperature.toStringAsFixed(1)}°C",
+            ),
+            _buildSummaryMetric(
+              'Excursions',
+              "${meta.excursionCount}",
+              valueColor: meta.excursionCount > 0
+                  ? const Color(0xFFEF4444)
+                  : const Color(0xFF10B981),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryMetric(String label, String value, {Color? valueColor}) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            color: const Color(0xFF64748B),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: GoogleFonts.outfit(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: valueColor ?? const Color(0xFF0F172A),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── AI Analysis FAB ──────────────────────────────────────────
+
+  Widget _buildAIFab(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF00ACC1), Color(0xFF00838F)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _accent.withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: FloatingActionButton.extended(
+        heroTag: 'ai_analysis_fab',
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => AIAnalysisSheet(scanResult: widget.result),
+          );
+        },
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        icon: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+        label: Text(
+          'AI Analysis',
+          style: GoogleFonts.outfit(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── AI Quick Badge ───────────────────────────────────────────
+
+  Widget _buildAIQuickBadge(CurrentConditionModel current, LifeModel life) {
+    final bool isSafe =
+        current.status == 'OK' &&
+        life.totalExcursions == 0 &&
+        life.healthScore >= 80;
+    final modelService = sl<ModelService>();
+    final bool aiReady = modelService.isModelActive;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSafe ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSafe
+                ? const Color(0xFF10B981).withOpacity(0.3)
+                : const Color(0xFFEF4444).withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              aiReady ? Icons.auto_awesome : Icons.smart_toy_outlined,
+              size: 16,
+              color: isSafe ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                aiReady
+                    ? (isSafe
+                          ? '✅ AI Verdict: Safe to Ship'
+                          : '⚠️ AI Verdict: Hold for Review')
+                    : (isSafe ? '✅ Safe to Ship' : '⚠️ Hold for Review'),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isSafe
+                      ? const Color(0xFF059669)
+                      : const Color(0xFFDC2626),
+                ),
+              ),
+            ),
+            if (aiReady)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: _accent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'AI',
+                  style: GoogleFonts.inter(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: _accent,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Smart Alert Banner ───────────────────────────────────────
+
+  Widget _buildSmartAlertBanner(
+    CurrentConditionModel current,
+    LifeModel life,
+    ProductModel product,
+  ) {
+    final bool hasExcursions = life.totalExcursions > 0;
+    final bool tempOutOfRange = current.status != 'OK';
+
+    String alertTitle = 'Cold Chain Anomaly Detected';
+    String alertBody = '';
+
+    if (tempOutOfRange && hasExcursions) {
+      alertBody =
+          '${product.name} is currently at ${current.temperature}°C (required: ${product.storageRequirement}) '
+          'with ${life.totalExcursions} recorded excursion(s). '
+          'Immediate review is recommended to prevent product degradation.';
+    } else if (tempOutOfRange) {
+      alertBody =
+          'Current temperature of ${current.temperature}°C is outside the required range '
+          '(${product.storageRequirement}). Monitor closely and take corrective action.';
+    } else if (hasExcursions) {
+      alertTitle = 'Excursion History Alert';
+      alertBody =
+          '${life.totalExcursions} temperature excursion(s) have been recorded for this product. '
+          'Health score is ${life.healthScore}%. Adjusted shelf life: ${life.adjustedDaysRemaining} days.';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFFFEF2F2),
+              const Color(0xFFFFF7ED).withOpacity(0.5),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFFECACA)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xFFEF4444),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    alertTitle,
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFB91C1C),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    alertBody,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: const Color(0xFF991B1B),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  InkWell(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) =>
+                            AIAnalysisSheet(scanResult: widget.result),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF00ACC1), Color(0xFF00838F)],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.auto_awesome,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Run AI Analysis',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

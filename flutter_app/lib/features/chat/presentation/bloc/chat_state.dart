@@ -23,6 +23,7 @@ class ChatCatalogReady extends ChatState {
   final Map<String, bool> installationStatus;
   final Map<String, bool> loadingStates;
   final Map<String, PreferredBackend> selectedBackends;
+  final Map<String, double> downloadProgress;
   final String? errorMessage;
 
   const ChatCatalogReady({
@@ -30,6 +31,7 @@ class ChatCatalogReady extends ChatState {
     required this.installationStatus,
     required this.loadingStates,
     required this.selectedBackends,
+    required this.downloadProgress,
     this.errorMessage,
   });
 
@@ -38,6 +40,7 @@ class ChatCatalogReady extends ChatState {
     Map<String, bool>? installationStatus,
     Map<String, bool>? loadingStates,
     Map<String, PreferredBackend>? selectedBackends,
+    Map<String, double>? downloadProgress,
     String? errorMessage,
   }) {
     return ChatCatalogReady(
@@ -45,6 +48,7 @@ class ChatCatalogReady extends ChatState {
       installationStatus: installationStatus ?? this.installationStatus,
       loadingStates: loadingStates ?? this.loadingStates,
       selectedBackends: selectedBackends ?? this.selectedBackends,
+      downloadProgress: downloadProgress ?? this.downloadProgress,
       errorMessage: errorMessage,
     );
   }
@@ -55,6 +59,7 @@ class ChatCatalogReady extends ChatState {
         installationStatus,
         loadingStates,
         selectedBackends,
+        downloadProgress,
         errorMessage,
       ];
 }

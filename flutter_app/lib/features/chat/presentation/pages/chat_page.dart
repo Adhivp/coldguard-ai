@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:code_card_ai/core/di/injection_container.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
@@ -75,7 +76,9 @@ class _ChatPageViewState extends State<ChatPageView> {
         // 1. Initial or catalog loading
         if (state is ChatInitial || state is ChatCatalogLoading) {
           return Scaffold(
-            backgroundColor: isDark ? const Color(0xFF0F0E17) : const Color(0xFFF8FAFC),
+            backgroundColor: isDark
+                ? const Color(0xFF0F0E17)
+                : const Color(0xFFF8FAFC),
             body: _buildLoadingState(context, 'Scanning models...'),
           );
         }
@@ -83,7 +86,9 @@ class _ChatPageViewState extends State<ChatPageView> {
         // 2. Model selection catalog
         if (state is ChatCatalogReady) {
           return Scaffold(
-            backgroundColor: isDark ? const Color(0xFF0F0E17) : const Color(0xFFF8FAFC),
+            backgroundColor: isDark
+                ? const Color(0xFF0F0E17)
+                : const Color(0xFFF8FAFC),
             appBar: AppBar(
               backgroundColor: isDark ? const Color(0xFF1E1C2A) : Colors.white,
               elevation: 0,
@@ -96,11 +101,19 @@ class _ChatPageViewState extends State<ChatPageView> {
                 ),
               ),
               leading: IconButton(
-                icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
               shape: Border(
-                bottom: BorderSide(color: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0), width: 1),
+                bottom: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF383552)
+                      : const Color(0xFFE2E8F0),
+                  width: 1,
+                ),
               ),
             ),
             body: ModelSelectionWidget(catalogState: state),
@@ -110,15 +123,22 @@ class _ChatPageViewState extends State<ChatPageView> {
         // 3. Model activating status
         if (state is ChatModelActivating) {
           return Scaffold(
-            backgroundColor: isDark ? const Color(0xFF0F0E17) : const Color(0xFFF8FAFC),
-            body: _buildLoadingState(context, 'Activating hardware accelerators...'),
+            backgroundColor: isDark
+                ? const Color(0xFF0F0E17)
+                : const Color(0xFFF8FAFC),
+            body: _buildLoadingState(
+              context,
+              'Activating hardware accelerators...',
+            ),
           );
         }
 
         // 4. Conversation session
         if (state is ChatActiveSession) {
           return Scaffold(
-            backgroundColor: isDark ? const Color(0xFF0F0E17) : const Color(0xFFF8FAFC),
+            backgroundColor: isDark
+                ? const Color(0xFF0F0E17)
+                : const Color(0xFFF8FAFC),
             appBar: AppBar(
               backgroundColor: isDark ? const Color(0xFF1E1C2A) : Colors.white,
               elevation: 0,
@@ -127,10 +147,16 @@ class _ChatPageViewState extends State<ChatPageView> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF383552) : const Color(0xFFEFF6FF),
+                      color: isDark
+                          ? const Color(0xFF383552)
+                          : const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(Icons.psychology_rounded, color: theme.primaryColor, size: 20),
+                    child: Icon(
+                      Icons.psychology_rounded,
+                      color: theme.primaryColor,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -141,14 +167,18 @@ class _ChatPageViewState extends State<ChatPageView> {
                         style: GoogleFonts.outfit(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0F172A),
                         ),
                       ),
                       Text(
                         '${state.activeModel.name} (${state.activeBackend.name.toUpperCase()})',
                         style: GoogleFonts.inter(
                           fontSize: 11,
-                          color: isDark ? const Color(0xFFA7A9BE) : const Color(0xFF64748B),
+                          color: isDark
+                              ? const Color(0xFFA7A9BE)
+                              : const Color(0xFF64748B),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -157,24 +187,41 @@ class _ChatPageViewState extends State<ChatPageView> {
                 ],
               ),
               leading: IconButton(
-                icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
               actions: [
                 if (state.isTyping)
                   IconButton(
-                    icon: Icon(Icons.stop_circle_outlined, color: theme.colorScheme.error),
-                    onPressed: () => context.read<ChatBloc>().add(const ChatStopGeneration()),
+                    icon: Icon(
+                      Icons.stop_circle_outlined,
+                      color: theme.colorScheme.error,
+                    ),
+                    onPressed: () => context.read<ChatBloc>().add(
+                      const ChatStopGeneration(),
+                    ),
                     tooltip: 'Stop generation',
                   ),
                 IconButton(
-                  icon: Icon(Icons.swap_horizontal_circle_outlined, color: theme.primaryColor),
-                  onPressed: () => context.read<ChatBloc>().add(const ChatResetSelection()),
+                  icon: Icon(
+                    Icons.swap_horizontal_circle_outlined,
+                    color: theme.primaryColor,
+                  ),
+                  onPressed: () =>
+                      context.read<ChatBloc>().add(const ChatResetSelection()),
                   tooltip: 'Change active model',
                 ),
               ],
               shape: Border(
-                bottom: BorderSide(color: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0), width: 1),
+                bottom: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF383552)
+                      : const Color(0xFFE2E8F0),
+                  width: 1,
+                ),
               ),
             ),
             body: SafeArea(
@@ -191,7 +238,8 @@ class _ChatPageViewState extends State<ChatPageView> {
                       },
                     ),
                   ),
-                  if (state.messages.length == 1 && !state.isTyping) _buildSuggestions(context),
+                  if (state.messages.length == 1 && !state.isTyping)
+                    _buildSuggestions(context),
                   _buildInputBar(context, state.isTyping),
                 ],
               ),
@@ -202,24 +250,38 @@ class _ChatPageViewState extends State<ChatPageView> {
         // 5. Error status fallback
         if (state is ChatError) {
           return Scaffold(
-            backgroundColor: isDark ? const Color(0xFF0F0E17) : const Color(0xFFF8FAFC),
+            backgroundColor: isDark
+                ? const Color(0xFF0F0E17)
+                : const Color(0xFFF8FAFC),
             body: Center(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline_rounded, size: 48, color: theme.colorScheme.error),
+                    Icon(
+                      Icons.error_outline_rounded,
+                      size: 48,
+                      color: theme.colorScheme.error,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Initialization Failed',
-                      style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    Text(state.message, style: GoogleFonts.inter(fontSize: 13), textAlign: TextAlign.center),
+                    Text(
+                      state.message,
+                      style: GoogleFonts.inter(fontSize: 13),
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: () => context.read<ChatBloc>().add(const ChatLoadCatalog()),
+                      onPressed: () =>
+                          context.read<ChatBloc>().add(const ChatLoadCatalog()),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -259,19 +321,27 @@ class _ChatPageViewState extends State<ChatPageView> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(
-        crossAxisAlignment:
-            message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: message.isUser
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment:
-                message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: message.isUser
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (!message.isUser) ...[
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: isDark ? const Color(0xFF383552) : const Color(0xFFEFF6FF),
-                  child: Icon(Icons.smart_toy_rounded, size: 16, color: primaryColor),
+                  backgroundColor: isDark
+                      ? const Color(0xFF383552)
+                      : const Color(0xFFEFF6FF),
+                  child: Icon(
+                    Icons.smart_toy_rounded,
+                    size: 16,
+                    color: primaryColor,
+                  ),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -290,7 +360,11 @@ class _ChatPageViewState extends State<ChatPageView> {
                     ),
                     border: message.isUser
                         ? null
-                        : Border.all(color: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0)),
+                        : Border.all(
+                            color: isDark
+                                ? const Color(0xFF383552)
+                                : const Color(0xFFE2E8F0),
+                          ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,16 +376,42 @@ class _ChatPageViewState extends State<ChatPageView> {
                           isComplete: !message.isStreaming,
                         ),
                       // Main Message Content
-                      Text(
-                        message.text,
-                        style: GoogleFonts.inter(
-                          color: message.isUser
-                              ? Colors.white
-                              : (isDark ? const Color(0xFFFFFFFE) : const Color(0xFF0F172A)),
-                          fontSize: 14,
-                          height: 1.5,
-                        ),
-                      ),
+                      message.isUser
+                          ? Text(
+                              message.text,
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 14,
+                                height: 1.5,
+                              ),
+                            )
+                          : MarkdownBody(
+                              data: message.text,
+                              selectable: true,
+                              styleSheet: MarkdownStyleSheet.fromTheme(theme)
+                                  .copyWith(
+                                    p: GoogleFonts.inter(
+                                      color: isDark
+                                          ? const Color(0xFFFFFFFE)
+                                          : const Color(0xFF0F172A),
+                                      fontSize: 14,
+                                      height: 1.5,
+                                    ),
+                                    strong: GoogleFonts.inter(
+                                      color: isDark
+                                          ? const Color(0xFFFFFFFE)
+                                          : const Color(0xFF0F172A),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    listBullet: GoogleFonts.inter(
+                                      color: isDark
+                                          ? const Color(0xFFFFFFFE)
+                                          : const Color(0xFF0F172A),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                            ),
                     ],
                   ),
                 ),
@@ -320,8 +420,14 @@ class _ChatPageViewState extends State<ChatPageView> {
                 const SizedBox(width: 8),
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0),
-                  child: Icon(Icons.person_rounded, size: 16, color: isDark ? Colors.white70 : const Color(0xFF475569)),
+                  backgroundColor: isDark
+                      ? const Color(0xFF383552)
+                      : const Color(0xFFE2E8F0),
+                  child: Icon(
+                    Icons.person_rounded,
+                    size: 16,
+                    color: isDark ? Colors.white70 : const Color(0xFF475569),
+                  ),
                 ),
               ],
             ],
@@ -336,7 +442,9 @@ class _ChatPageViewState extends State<ChatPageView> {
               _formatTime(message.timestamp),
               style: GoogleFonts.inter(
                 fontSize: 10,
-                color: isDark ? const Color(0xFFA7A9BE) : const Color(0xFF94A3B8),
+                color: isDark
+                    ? const Color(0xFFA7A9BE)
+                    : const Color(0xFF94A3B8),
               ),
             ),
           ),
@@ -367,7 +475,9 @@ class _ChatPageViewState extends State<ChatPageView> {
               style: GoogleFonts.outfit(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: isDark ? const Color(0xFFA7A9BE) : const Color(0xFF64748B),
+                color: isDark
+                    ? const Color(0xFFA7A9BE)
+                    : const Color(0xFF64748B),
               ),
             ),
           ),
@@ -376,8 +486,14 @@ class _ChatPageViewState extends State<ChatPageView> {
             runSpacing: 8,
             children: prompts.map((prompt) {
               return ActionChip(
-                backgroundColor: isDark ? const Color(0xFF1E1C2A) : Colors.white,
-                side: BorderSide(color: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0)),
+                backgroundColor: isDark
+                    ? const Color(0xFF1E1C2A)
+                    : Colors.white,
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF383552)
+                      : const Color(0xFFE2E8F0),
+                ),
                 label: Text(
                   prompt,
                   style: GoogleFonts.inter(
@@ -386,7 +502,9 @@ class _ChatPageViewState extends State<ChatPageView> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                onPressed: () => context.read<ChatBloc>().add(ChatSendMessage(message: prompt)),
+                onPressed: () => context.read<ChatBloc>().add(
+                  ChatSendMessage(message: prompt),
+                ),
               );
             }).toList(),
           ),
@@ -404,7 +522,10 @@ class _ChatPageViewState extends State<ChatPageView> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1C2A) : Colors.white,
         border: Border(
-          top: BorderSide(color: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0), width: 1),
+          top: BorderSide(
+            color: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0),
+            width: 1,
+          ),
         ),
       ),
       child: Row(
@@ -412,14 +533,25 @@ class _ChatPageViewState extends State<ChatPageView> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F0E17) : const Color(0xFFF8FAFC),
+                color: isDark
+                    ? const Color(0xFF0F0E17)
+                    : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF383552)
+                      : const Color(0xFFE2E8F0),
+                ),
               ),
               child: Row(
                 children: [
                   const SizedBox(width: 14),
-                  Icon(Icons.keyboard_alt_outlined, color: isDark ? const Color(0xFFA7A9BE) : const Color(0xFF94A3B8)),
+                  Icon(
+                    Icons.keyboard_alt_outlined,
+                    color: isDark
+                        ? const Color(0xFFA7A9BE)
+                        : const Color(0xFF94A3B8),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
@@ -444,7 +576,11 @@ class _ChatPageViewState extends State<ChatPageView> {
             radius: 22,
             backgroundColor: theme.primaryColor,
             child: IconButton(
-              icon: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+              icon: const Icon(
+                Icons.send_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
               onPressed: () => _sendMessage(context),
             ),
           ),

@@ -32,8 +32,14 @@ class ModelService {
       // Self-healing: if file exists in app_flutter directory, register it!
       final fileExists = await _checkFileExists(filename);
       if (fileExists) {
-        debugPrint('[ModelService] Sideloaded file detected for ${model.name}, registering in repository...');
-        await _registerLocalModel(filename, model.url, (model.sizeGB * 1024 * 1024 * 1024).toInt());
+        debugPrint(
+          '[ModelService] Sideloaded file detected for ${model.name}, registering in repository...',
+        );
+        await _registerLocalModel(
+          filename,
+          model.url,
+          (model.sizeGB * 1024 * 1024 * 1024).toInt(),
+        );
         return true;
       }
       return false;
@@ -50,7 +56,9 @@ class ModelService {
       final exists = await file.exists();
       if (exists) {
         final length = await file.length();
-        debugPrint('[ModelService] Local file $filename exists. Size: $length bytes.');
+        debugPrint(
+          '[ModelService] Local file $filename exists. Size: $length bytes.',
+        );
         // We consider the model file valid if it is of non-trivial size (>100MB)
         return length > 100 * 1024 * 1024;
       }
@@ -61,18 +69,19 @@ class ModelService {
     }
   }
 
-  Future<void> _registerLocalModel(String filename, String url, int sizeBytes) async {
+  Future<void> _registerLocalModel(
+    String filename,
+    String url,
+    int sizeBytes,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Save model metadata matching SharedPreferencesModelRepository schema
       final modelKey = 'model_$filename';
       final modelData = {
         'id': filename,
-        'source': {
-          'type': 'network',
-          'url': url,
-        },
+        'source': {'type': 'network', 'url': url},
         'installedAt': DateTime.now().toIso8601String(),
         'sizeBytes': sizeBytes,
         'type': 'ModelType.inference',
@@ -93,29 +102,33 @@ class ModelService {
         index.add(filename);
         await prefs.setString(indexKey, jsonEncode(index));
       }
-      debugPrint('[ModelService] Successfully self-healed and registered model: $filename');
+      debugPrint(
+        '[ModelService] Successfully self-healed and registered model: $filename',
+      );
     } catch (e) {
       debugPrint('[ModelService] Error registering local model: $e');
     }
   }
 
   /// Install a model from the web catalog using flutter_gemma's installer.
-  Future<void> installModel(
-    ModelInfo model, {
-    String? authToken,
-  }) async {
-    debugPrint('[ModelService] Downloading and installing model: ${model.name}');
+  Future<void> installModel(ModelInfo model, {String? authToken}) async {
+    debugPrint(
+      '[ModelService] Downloading and installing model: ${model.name}',
+    );
 
     final installer = FlutterGemma.installModel(
       modelType: model.modelType,
       fileType: model.fileType,
     );
 
-    if (model.needsAuth && authToken != null) {
-      await installer.fromNetwork(model.url, token: authToken).install();
-    } else {
-      await installer.fromNetwork(model.url).install();
-    }
+    final networkInstaller = model.needsAuth && authToken != null
+        ? installer.fromNetwork(model.url, token: authToken)
+        : installer.fromNetwork(model.url);
+
+    await networkInstaller.withProgress((progress) {
+      debugPrint('📊 Progress: $progress%');
+      _downloadProgressController.add(progress.toDouble());
+    }).install();
 
     debugPrint('[ModelService] Model install finished: ${model.name}');
   }
@@ -125,7 +138,32 @@ class ModelService {
     ModelInfo model, {
     PreferredBackend? backend,
   }) async {
-    debugPrint('[ModelService] Activating model: ${model.name} with backend: $backend');
+    debugPrint(
+      '[ModelService] Activating model: ${model.name} with backend: $backend',
+    );
+
+    // On-device engine re-initialization during app startup/restart:
+    // If the model file is already present on local storage but not set active in
+    // the native inference plugin, re-register/link it via local install to prevent
+    // 'No active inference model set' errors.
+    try {
+      final filename = model.url.split('/').last;
+      final appDir = await getApplicationDocumentsDirectory();
+      final file = File('${appDir.path}/$filename');
+      if (await file.exists()) {
+        debugPrint(
+          '[ModelService] Registering existing local model file as active: ${file.path}',
+        );
+        await FlutterGemma.installModel(
+          modelType: model.modelType,
+          fileType: model.fileType,
+        ).fromFile(file.path).install();
+      }
+    } catch (e) {
+      debugPrint(
+        '[ModelService] Optional local model activation step failed: $e',
+      );
+    }
 
     _activeModel = await FlutterGemma.getActiveModel(
       maxTokens: model.maxTokens,
@@ -136,12 +174,76 @@ class ModelService {
 
     _activeModelId = model.id;
 
-    // Save active model ID
+    // Save active model ID and backend for auto-restoration on restart
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('active_model_id', model.id);
+    if (backend != null) {
+      await prefs.setString('active_model_backend', backend.name);
+    }
 
     debugPrint('[ModelService] Active model set successfully: ${model.name}');
     return _activeModel!;
+  }
+
+  /// Create an isolated analysis chat session from the active model.
+  /// This is separate from the main conversation chat and used for
+  /// on-demand product analysis on the scan details screen.
+  Future<InferenceChat?> createAnalysisChat(ModelInfo model) async {
+    if (_activeModel == null) {
+      debugPrint('[ModelService] Cannot create analysis chat: no active model');
+      return null;
+    }
+    return await _activeModel!.createChat(
+      modelType: model.modelType,
+      supportImage: false,
+      supportAudio: false,
+      supportsFunctionCalls: false,
+      isThinking: model.supportsThinking,
+    );
+  }
+
+  /// Whether an inference model is currently compiled and ready.
+  bool get isModelActive => _activeModel != null;
+
+  /// Delete a downloaded model file and unregister it from preferences
+  Future<void> deleteModel(ModelInfo model) async {
+    try {
+      final filename = model.filename;
+      final appDir = await getApplicationDocumentsDirectory();
+      final file = File('${appDir.path}/$filename');
+      if (await file.exists()) {
+        await file.delete();
+        debugPrint('[ModelService] Physically deleted model file: $filename');
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      final modelKey = 'model_$filename';
+      await prefs.remove(modelKey);
+
+      const indexKey = 'model_index';
+      final indexJson = prefs.getString(indexKey);
+      if (indexJson != null) {
+        List<String> index = (jsonDecode(indexJson) as List<dynamic>)
+            .cast<String>();
+        if (index.contains(filename)) {
+          index.remove(filename);
+          await prefs.setString(indexKey, jsonEncode(index));
+        }
+      }
+
+      if (_activeModelId == model.id) {
+        _activeModelId = null;
+        _activeModel = null;
+        await prefs.remove('active_model_id');
+      }
+
+      debugPrint(
+        '[ModelService] Successfully deleted and unregistered model: $filename',
+      );
+    } catch (e) {
+      debugPrint('[ModelService] Error deleting model: $e');
+      throw Exception('Failed to delete model file: $e');
+    }
   }
 
   /// Close model / dispose

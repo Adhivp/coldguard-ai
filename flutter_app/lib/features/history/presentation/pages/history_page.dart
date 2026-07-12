@@ -21,67 +21,93 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF0F0E17)
-          : const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 16.0 : 24.0,
-                vertical: 16.0,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title and Header Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'History Logs',
-                              style: GoogleFonts.outfit(
-                                fontSize: isMobile ? 26 : 30,
-                                fontWeight: FontWeight.bold,
-                                color: isDark
-                                    ? Colors.white
-                                    : const Color(0xFF0F172A),
+      backgroundColor: isDark ? const Color(0xFF0F0E17) : const Color(0xFFF8FAFC),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [
+                    const Color(0xFF0E7490).withOpacity(0.35),
+                    const Color(0xFF0F0E17),
+                  ]
+                : [
+                    const Color(0xFF0E7490),
+                    const Color(0xFFF8FAFC),
+                  ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: const [0.0, 0.45],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 16.0 : 24.0,
+                  vertical: 16.0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title and Header Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'History Logs',
+                                style: GoogleFonts.outfit(
+                                  fontSize: isMobile ? 26 : 30,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Text(
-                              'Historical scan activity',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                color: isDark
-                                    ? const Color(0xFFA7A9BE)
-                                    : const Color(0xFF64748B),
+                              Text(
+                                'Historical scan activity',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: Colors.white.withOpacity(0.85),
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_sweep_rounded,
-                          color: Colors.redAccent,
-                          size: 26,
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_sweep_rounded,
+                            color: Colors.white,
+                            size: 26,
+                          ),
+                          tooltip: 'Clear Scan History',
+                          onPressed: _clearHistoryDialog,
                         ),
-                        tooltip: 'Clear Scan History',
-                        onPressed: _clearHistoryDialog,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
 
-                  // Tab Content (Only Scan History now)
-                  Expanded(child: _buildScanHistoryView(isDark)),
-                ],
+                    // Tab Content (Only Scan History now)
+                    Expanded(child: _buildScanHistoryView(isDark)),
+                  ],
+                ),
               ),
             ),
           ),

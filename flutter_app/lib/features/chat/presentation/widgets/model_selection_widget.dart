@@ -58,7 +58,11 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline_rounded, color: Colors.red, size: 20),
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: Colors.red,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -78,9 +82,11 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
                 final model = state.models[index];
                 final isInstalled = state.installationStatus[model.id] ?? false;
                 final isLoader = state.loadingStates[model.id] ?? false;
-                
+                final progress = state.downloadProgress[model.id] ?? 0.0;
+
                 // Initialize local backend selection if not present
-                _localBackends[model.id] ??= state.selectedBackends[model.id] ?? PreferredBackend.gpu;
+                _localBackends[model.id] ??=
+                    state.selectedBackends[model.id] ?? PreferredBackend.gpu;
                 final selectedBackend = _localBackends[model.id]!;
 
                 return Card(
@@ -88,7 +94,9 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
-                      color: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0),
+                      color: isDark
+                          ? const Color(0xFF383552)
+                          : const Color(0xFFE2E8F0),
                       width: 1,
                     ),
                   ),
@@ -115,17 +123,26 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
                                       ),
                                       const SizedBox(width: 8),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: isDark ? const Color(0xFF383552) : const Color(0xFFEFF6FF),
-                                          borderRadius: BorderRadius.circular(10),
+                                          color: isDark
+                                              ? const Color(0xFF383552)
+                                              : const Color(0xFFEFF6FF),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                         child: Text(
                                           model.sizeLabel,
                                           style: GoogleFonts.inter(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
-                                            color: isDark ? Colors.white70 : const Color(0xFF0F52FF),
+                                            color: isDark
+                                                ? Colors.white70
+                                                : const Color(0xFF0F52FF),
                                           ),
                                         ),
                                       ),
@@ -136,7 +153,9 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
                                     model.description,
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
-                                      color: isDark ? const Color(0xFFA7A9BE) : const Color(0xFF475569),
+                                      color: isDark
+                                          ? const Color(0xFFA7A9BE)
+                                          : const Color(0xFF475569),
                                       height: 1.3,
                                     ),
                                   ),
@@ -145,6 +164,37 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
                             ),
                           ],
                         ),
+                        if (isLoader && !isInstalled) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value: progress / 100.0,
+                                    backgroundColor: isDark
+                                        ? const Color(0xFF383552)
+                                        : const Color(0xFFE2E8F0),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      theme.primaryColor,
+                                    ),
+                                    minHeight: 6,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                '${progress.toInt()}%',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         Wrap(
                           spacing: 8,
@@ -166,11 +216,24 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
                                 DropdownButton<PreferredBackend>(
                                   value: selectedBackend,
                                   underline: const SizedBox(),
-                                  style: GoogleFonts.inter(fontSize: 13, color: theme.primaryColor, fontWeight: FontWeight.w600),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: theme.primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                   items: const [
-                                    DropdownMenuItem(value: PreferredBackend.gpu, child: Text('GPU (OpenCL)')),
-                                    DropdownMenuItem(value: PreferredBackend.npu, child: Text('NPU (QNN/DSP)')),
-                                    DropdownMenuItem(value: PreferredBackend.cpu, child: Text('CPU (Fallback)')),
+                                    DropdownMenuItem(
+                                      value: PreferredBackend.gpu,
+                                      child: Text('GPU (OpenCL)'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: PreferredBackend.npu,
+                                      child: Text('NPU (QNN/DSP)'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: PreferredBackend.cpu,
+                                      child: Text('CPU (Fallback)'),
+                                    ),
                                   ],
                                   onChanged: (backend) {
                                     if (backend != null) {
@@ -186,53 +249,136 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (isInstalled) ...[
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: theme.primaryColor,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.redAccent,
+                                      side: const BorderSide(
+                                        color: Colors.redAccent,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
                                     ),
-                                    onPressed: isLoader ? null : () {
-                                      context.read<ChatBloc>().add(ChatActivateModel(
-                                        model: model,
-                                        backend: selectedBackend,
-                                      ));
-                                    },
-                                    child: isLoader
-                                        ? const SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                          )
-                                        : Text('Activate', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13)),
-                                  ),
-                                ] else ...[
-                                  TextButton.icon(
-                                    icon: const Icon(Icons.download_rounded, size: 16),
-                                    label: Text('Sideload', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13)),
-                                    onPressed: () => _showSideloadInstructions(context, model),
+                                    onPressed: isLoader
+                                        ? null
+                                        : () {
+                                            _showDeleteConfirmDialog(
+                                              context,
+                                              model,
+                                            );
+                                          },
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 16,
+                                    ),
+                                    label: Text(
+                                      'Delete',
+                                      style: GoogleFonts.outfit(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
                                   ElevatedButton(
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0),
-                                      foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      backgroundColor: theme.primaryColor,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
                                     ),
-                                    onPressed: isLoader ? null : () {
-                                      context.read<ChatBloc>().add(ChatDownloadModel(model: model));
-                                    },
+                                    onPressed: isLoader
+                                        ? null
+                                        : () {
+                                            context.read<ChatBloc>().add(
+                                              ChatActivateModel(
+                                                model: model,
+                                                backend: selectedBackend,
+                                              ),
+                                            );
+                                          },
                                     child: isLoader
                                         ? const SizedBox(
                                             width: 16,
                                             height: 16,
-                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
                                           )
-                                        : Text('Download', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13)),
+                                        : Text(
+                                            'Activate',
+                                            style: GoogleFonts.outfit(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
                                   ),
-                                ]
+                                ] else ...[
+                                  TextButton.icon(
+                                    icon: const Icon(
+                                      Icons.download_rounded,
+                                      size: 16,
+                                    ),
+                                    label: Text(
+                                      'Sideload',
+                                      style: GoogleFonts.outfit(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    onPressed: () => _showSideloadInstructions(
+                                      context,
+                                      model,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: isDark
+                                          ? const Color(0xFF383552)
+                                          : const Color(0xFFE2E8F0),
+                                      foregroundColor: isDark
+                                          ? Colors.white
+                                          : const Color(0xFF0F172A),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    onPressed: isLoader
+                                        ? null
+                                        : () {
+                                            context.read<ChatBloc>().add(
+                                              ChatDownloadModel(model: model),
+                                            );
+                                          },
+                                    child: isLoader
+                                        ? Text(
+                                            'Downloading... ${progress.toInt()}%',
+                                            style: GoogleFonts.outfit(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          )
+                                        : Text(
+                                            'Download',
+                                            style: GoogleFonts.outfit(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                  ),
+                                ],
                               ],
                             ),
                           ],
@@ -267,7 +413,10 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
               const SizedBox(width: 10),
               Text(
                 'ADB Sideload Walkthrough',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
               ),
             ],
           ),
@@ -307,7 +456,11 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
                 const SizedBox(height: 14),
                 Text(
                   'Once completed, restart the app and this model will instantly show as "Ready".',
-                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: theme.primaryColor),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: theme.primaryColor,
+                  ),
                 ),
               ],
             ),
@@ -315,7 +468,10 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Close', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+              child: Text(
+                'Close',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -331,7 +487,9 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0F0E17) : const Color(0xFFF1F3F5),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF383552) : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Stack(
         children: [
@@ -351,7 +509,9 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: code));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Command copied to clipboard')),
+                    const SnackBar(
+                      content: Text('Command copied to clipboard'),
+                    ),
                   );
                 },
               ),
@@ -359,6 +519,48 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showDeleteConfirmDialog(BuildContext context, ModelInfo model) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1C2A) : Colors.white,
+          title: Text(
+            'Delete Model File?',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'This will permanently delete the ${model.sizeLabel} local model file from your device.',
+            style: GoogleFonts.inter(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogCtx);
+                context.read<ChatBloc>().add(ChatDeleteModel(model: model));
+              },
+              child: Text(
+                'Delete',
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

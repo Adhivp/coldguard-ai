@@ -16,43 +16,26 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
-  late final AnimationController _animationController;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
 
   final List<Map<String, dynamic>> _navItems = [
     {'label': 'Dashboard', 'icon': Icons.home_rounded},
-    {'label': 'Monitoring', 'icon': Icons.monitor_heart_rounded},
+    {'label': 'Products', 'icon': Icons.inventory_2_rounded},
     {'label': 'History', 'icon': Icons.access_time_rounded},
-    {'label': 'Settings', 'icon': Icons.settings_rounded},
+    {'label': 'About Us', 'icon': Icons.info_outline_rounded},
     {'label': 'AI Assistant', 'icon': Icons.psychology_rounded},
   ];
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final List<Widget> screens = [
       const DashboardScreen(),
-      SafeArea(
-        bottom: false,
-        child: MonitoringScreen(animation: _animationController),
-      ),
-      const SafeArea(bottom: false, child: HistoryScreen()),
+      const MonitoringScreen(),
+      const HistoryScreen(),
       const SafeArea(bottom: false, child: SettingsScreen()),
       const SafeArea(bottom: false, child: ChatPage()),
     ];
@@ -64,7 +47,9 @@ class _HomePageState extends State<HomePage>
     Widget contentBody = IndexedStack(index: _currentIndex, children: screens);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: isDark
+          ? const Color(0xFF0F0E17)
+          : const Color(0xFFF8FAFC),
       body: Row(
         children: [
           if (isDesktop)

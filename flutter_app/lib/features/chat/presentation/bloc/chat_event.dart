@@ -45,3 +45,20 @@ class ChatStopGeneration extends ChatEvent {
 class ChatResetSelection extends ChatEvent {
   const ChatResetSelection();
 }
+
+class ChatDownloadProgressUpdate extends ChatEvent {
+  final String modelId;
+  final double progress;
+  const ChatDownloadProgressUpdate({required this.modelId, required this.progress});
+
+  @override
+  List<Object?> get props => [modelId, progress];
+}
+
+class ChatDeleteModel extends ChatEvent {
+  final ModelInfo model;
+  const ChatDeleteModel({required this.model});
+
+  @override
+  List<Object?> get props => [model];
+}

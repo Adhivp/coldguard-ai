@@ -10,10 +10,89 @@ class ScanResultModel {
   });
 
   factory ScanResultModel.fromJson(Map<String, dynamic> json) {
+    // Check if it's the new flat structure
+    if (json.containsKey('product_id') && !json.containsKey('product')) {
+      final productId = json['product_id'] as String? ?? '';
+
+      // Read real product metadata from API response
+      final String name = json['name'] as String? ?? 'Product $productId';
+      final String category = json['category'] as String? ?? 'General';
+      final String manufacturer = json['manufacturer'] as String? ?? 'Unknown';
+      final String batchNumber =
+          json['batch_number'] as String? ??
+          json['device_id'] as String? ??
+          'BATCH-UNK';
+      final String location = json['location'] as String? ?? 'In Transit';
+
+      // Build storage requirement string from min/max if available
+      String storageRequirement = '2°C to 8°C';
+      if (json.containsKey('storage_req_min_c') &&
+          json.containsKey('storage_req_max_c')) {
+        final minC = (json['storage_req_min_c'] as num?)?.toDouble();
+        final maxC = (json['storage_req_max_c'] as num?)?.toDouble();
+        if (minC != null && maxC != null) {
+          storageRequirement =
+              '${minC.toStringAsFixed(0)}°C to ${maxC.toStringAsFixed(0)}°C';
+        }
+      }
+
+      final product = ProductModel(
+        productId: productId,
+        name: name,
+        batchNumber: batchNumber,
+        manufacturer: manufacturer,
+        category: category,
+        storageRequirement: storageRequirement,
+        manufacturedAt:
+            json['manufactured_at'] as String? ??
+            json['first_reading_ts'] as String? ??
+            '',
+        expiresAt:
+            json['expires_at'] as String? ??
+            json['last_reading_ts'] as String? ??
+            '',
+        currentLocation: location,
+      );
+
+      final currentMap = json['current'] as Map<String, dynamic>? ?? {};
+      final continuityOk = currentMap['continuity_ok'] as bool? ?? true;
+      final temp = (currentMap['temperature_c'] as num?)?.toDouble() ?? 0.0;
+      final hum = (currentMap['humidity_pct'] as num?)?.toDouble() ?? 0.0;
+      final current = CurrentConditionModel(
+        temperature: temp,
+        humidity: hum,
+        status: continuityOk ? 'OK' : 'EXCURSION',
+        lastUpdated: currentMap['reading_ts'] as String? ?? '',
+      );
+
+      final excursionCount = json['excursion_count'] as int? ?? 0;
+      final healthScore = continuityOk
+          ? 98
+          : (100 - excursionCount * 10).clamp(30, 95);
+      final life = LifeModel(
+        daysRemaining: 14,
+        healthScore: healthScore,
+        estimatedExpiry:
+            json['expires_at'] as String? ??
+            json['last_reading_ts'] as String? ??
+            '',
+        adjustedDaysRemaining: 12,
+        status: continuityOk ? 'HEALTHY' : 'WARNING',
+        totalExcursions: excursionCount,
+      );
+
+      return ScanResultModel(product: product, current: current, life: life);
+    }
+
+    // Default to parsing the standard nested structure
     return ScanResultModel(
-      product: ProductModel.fromJson(json['product'] as Map<String, dynamic>),
-      current: CurrentConditionModel.fromJson(json['current'] as Map<String, dynamic>),
-      life: LifeModel.fromJson(json['life'] as Map<String, dynamic>),
+      product: ProductModel.fromJson(
+        json['product'] as Map<String, dynamic>? ?? {},
+      ),
+      current: CurrentConditionModel.fromJson(
+        json['current'] as Map<String, dynamic>? ?? {},
+      ),
+      life: LifeModel.fromJson(json['life'] as Map<String, dynamic>? ?? {}),
     );
   }
 

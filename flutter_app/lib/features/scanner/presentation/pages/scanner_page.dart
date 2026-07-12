@@ -53,13 +53,9 @@ class _ScannerPageState extends State<ScannerPage> with SingleTickerProviderStat
     try {
       final remoteDataSource = sl<ScanRemoteDataSource>();
       
-      // Call local backend with the scanned ID (e.g. 'PROD-001')
-      // If code is not 'PROD-001', we can default to it for testing,
-      // or try scanning the actual scanned code. Let's try the scanned code, 
-      // but fallback to PROD-001 if it fails or if they tapped simulation.
       String targetId = code.trim();
       if (targetId.isEmpty) {
-        targetId = 'PROD-001';
+        throw Exception('Scanned code is empty');
       }
 
       final scanResult = await remoteDataSource.scanProduct(targetId);
@@ -78,12 +74,26 @@ class _ScannerPageState extends State<ScannerPage> with SingleTickerProviderStat
       }
     } catch (e) {
       if (mounted) {
+        String msg = 'Scan failed: Unable to fetch data for "$code".';
+        if (e.toString().contains('404')) {
+          msg = 'Product not found (404): "$code" is invalid.';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Scan failed: Unable to fetch data for "$code". Mocking PROD-001...'),
-            action: SnackBarAction(
-              label: 'Load PROD-001',
-              onPressed: () => _simulateScan('PROD-001'),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    msg,
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -94,10 +104,6 @@ class _ScannerPageState extends State<ScannerPage> with SingleTickerProviderStat
         _scannerController.start();
       }
     }
-  }
-
-  Future<void> _simulateScan(String code) async {
-    await _handleScan(code);
   }
 
   @override
@@ -282,22 +288,6 @@ class _ScannerPageState extends State<ScannerPage> with SingleTickerProviderStat
                       onTap: () => setState(() => _isQrMode = false),
                     ),
                   ],
-                ),
-                const SizedBox(height: 24),
-
-                // Simulate/Mock Trigger for Emulator or quick test
-                ElevatedButton.icon(
-                  onPressed: () => _simulateScan('PROD-001'),
-                  icon: const Icon(Icons.bug_report_rounded),
-                  label: const Text('Simulate PROD-001 Scan'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white24,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
                 ),
               ],
             ),

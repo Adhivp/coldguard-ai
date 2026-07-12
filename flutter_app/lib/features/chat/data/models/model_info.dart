@@ -57,21 +57,6 @@ class ModelCatalog {
   ModelCatalog._();
 
   static const List<ModelInfo> allModels = [
-    // ─── DeepSeek R1 ──────────────────────────────────────────────
-    ModelInfo(
-      id: 'deepseek_r1',
-      name: 'DeepSeek R1',
-      family: 'DeepSeek',
-      description: 'High-performance reasoning and code generation with thinking mode',
-      url: 'https://huggingface.co/litert-community/DeepSeek-R1-Distill-Qwen-1.5B/resolve/main/DeepSeek-R1-Distill-Qwen-1.5B-Generic-int4.task',
-      sizeGB: 1.7,
-      modelType: ModelType.deepSeek,
-      fileType: ModelFileType.task,
-      supportsThinking: true,
-      supportsFunctionCalling: true,
-      maxTokens: 2048,
-    ),
-
     // ─── Gemma 4 ──────────────────────────────────────────────────
     ModelInfo(
       id: 'gemma4_e2b',
@@ -82,39 +67,11 @@ class ModelCatalog {
       sizeGB: 2.4,
       modelType: ModelType.gemmaIt,
       fileType: ModelFileType.task,
-      supportsVision: true,
+      supportsVision: false,
       supportsThinking: true,
       supportsFunctionCalling: true,
-      supportsAudio: true,
+      supportsAudio: false,
       maxTokens: 2048,
-    ),
-
-    // ─── Gemma 3 ──────────────────────────────────────────────────
-    ModelInfo(
-      id: 'gemma3_1b',
-      name: 'Gemma 3 1B',
-      family: 'Gemma 3',
-      description: 'Small, extremely fast balanced text generation',
-      url: 'https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task',
-      sizeGB: 0.5,
-      modelType: ModelType.gemmaIt,
-      fileType: ModelFileType.task,
-      supportsFunctionCalling: true,
-      maxTokens: 1024,
-    ),
-
-    // ─── SmolLM ───────────────────────────────────────────────────
-    ModelInfo(
-      id: 'smollm_135m',
-      name: 'SmolLM 135M',
-      family: 'SmolLM',
-      description: 'Perfect for quick testing, low memory consumption',
-      url: 'https://huggingface.co/litert-community/SmolLM-135M-Instruct/resolve/main/SmolLM-135M-Instruct-int4.task',
-      sizeGB: 0.132,
-      modelType: ModelType.general,
-      fileType: ModelFileType.task,
-      maxTokens: 512,
-      languages: ['English'],
     ),
   ];
 

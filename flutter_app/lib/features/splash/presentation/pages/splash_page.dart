@@ -190,7 +190,6 @@ class _SplashPageState extends State<SplashPage>
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-
                   // 3. Glowing orbit path circle
                   if (_iconOpacityAnimation.value > 0)
                     CustomPaint(
@@ -235,15 +234,15 @@ class _SplashPageState extends State<SplashPage>
                     }),
 
                   // 5. Central Logo and Text Container
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Central Logo
-                      if (_logoOpacityAnimation.value > 0)
-                        Transform.scale(
-                          scale: _logoScaleAnimation.value,
-                          child: Opacity(
-                            opacity: _logoOpacityAnimation.value,
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Central Logo
+                        Opacity(
+                          opacity: _logoOpacityAnimation.value.clamp(0.0, 1.0),
+                          child: Transform.scale(
+                            scale: _logoScaleAnimation.value,
                             child: ScannerLogo(
                               sweepProgress: laserSweep,
                               isDark: isDark,
@@ -251,14 +250,13 @@ class _SplashPageState extends State<SplashPage>
                           ),
                         ),
 
-                      const SizedBox(height: 32),
+                        const SizedBox(height: 32),
 
-                      // Brand Text & Tagline
-                      if (_textOpacityAnimation.value > 0)
-                        SlideTransition(
-                          position: _textSlideAnimation,
-                          child: Opacity(
-                            opacity: _textOpacityAnimation.value,
+                        // Brand Text & Tagline
+                        Opacity(
+                          opacity: _textOpacityAnimation.value.clamp(0.0, 1.0),
+                          child: SlideTransition(
+                            position: _textSlideAnimation,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -296,7 +294,8 @@ class _SplashPageState extends State<SplashPage>
                             ),
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),

@@ -1,117 +1,145 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:code_card_ai/core/utils/responsive.dart';
-import 'package:code_card_ai/features/settings/presentation/widgets/setting_switch.dart';
-import 'package:code_card_ai/shared_widgets/section_header.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  bool _alertsEnabled = true;
-  bool _pushNotifications = true;
-  bool _realTimeSync = false;
-  bool _darkMode = false;
-  bool _highAccuracy = true;
-
-  @override
   Widget build(BuildContext context) {
-    bool isMobile = Responsive.isMobile(context);
+    final bool isMobile = Responsive.isMobile(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800),
-        child: ListView(
-          padding: EdgeInsets.all(isMobile ? 24.0 : 36.0),
-          children: [
-            Text(
-              'Settings',
-              style: GoogleFonts.outfit(
-                fontSize: isMobile ? 28 : 32,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF0F172A),
-              ),
-            ),
-            Text(
-              'Configure application rules and connection settings',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF64748B),
-              ),
-            ),
-            const SizedBox(height: 24),
+    final bgColor = isDark ? const Color(0xFF0F0E17) : const Color(0xFFF8FAFC);
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor = isDark
+        ? const Color(0xFF334155)
+        : const Color(0xFFE2E8F0);
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final subTextColor = isDark
+        ? const Color(0xFFA7A9BE)
+        : const Color(0xFF64748B);
 
-            const SectionHeader(title: 'System Configurations'),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+    return Scaffold(
+      backgroundColor: bgColor,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: ListView(
+            padding: EdgeInsets.all(isMobile ? 20.0 : 36.0),
+            children: [
+              // Header Segment
+              Text(
+                'About the App',
+                style: GoogleFonts.outfit(
+                  fontSize: isMobile ? 26 : 30,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
               ),
-              child: Column(
-                children: [
-                  SettingSwitch(
-                    label: 'Temperature Alerts',
-                    subtitle: 'Notify if threshold is breached',
-                    value: _alertsEnabled,
-                    icon: Icons.add_alert_rounded,
-                    onChanged: (val) => setState(() => _alertsEnabled = val),
-                  ),
-                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                  SettingSwitch(
-                    label: 'Push Notifications',
-                    subtitle: 'Enable visual/audible alarms',
-                    value: _pushNotifications,
-                    icon: Icons.notifications_active_rounded,
-                    onChanged: (val) => setState(() => _pushNotifications = val),
-                  ),
-                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                  SettingSwitch(
-                    label: 'Real-time Syncing',
-                    subtitle: 'Upload data continuously (more battery)',
-                    value: _realTimeSync,
-                    icon: Icons.sync_rounded,
-                    onChanged: (val) => setState(() => _realTimeSync = val),
-                  ),
-                ],
+              Text(
+                'Learn more about ColdGuard AI technology & mission',
+                style: GoogleFonts.inter(fontSize: 13, color: subTextColor),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            const SectionHeader(title: 'Preferences'),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+              // Brand Icon Card
+              Container(
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: borderColor),
+                ),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    // Glowing logo badge
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF00ACC1), Color(0xFF0F52FF)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x3300ACC1),
+                            blurRadius: 16,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.ac_unit_rounded,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'ColdGuard AI',
+                      style: GoogleFonts.outfit(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Version 1.0.0',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF00ACC1),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Divider(color: borderColor),
+                    const SizedBox(height: 12),
+                    Text(
+                      'ColdGuard AI is an intelligent telemetry analysis platform designed to safeguard temperature-sensitive shipments across global supply chains. By combining raw IoT sensor tracking, interactive data visualization, and LLM-powered telemetry audits, we ensure complete environmental security from farm to fork.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: subTextColor,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                children: [
-                  SettingSwitch(
-                    label: 'Dark Mode',
-                    subtitle: 'Switch theme to dark elements',
-                    value: _darkMode,
-                    icon: Icons.dark_mode_rounded,
-                    onChanged: (val) => setState(() => _darkMode = val),
-                  ),
-                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                  SettingSwitch(
-                    label: 'High Accuracy GPS',
-                    subtitle: 'Track gateway coordinates exactly',
-                    value: _highAccuracy,
-                    icon: Icons.gps_fixed_rounded,
-                    onChanged: (val) => setState(() => _highAccuracy = val),
-                  ),
-                ],
+              const SizedBox(height: 24),
+
+              // Footer Support
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      '© 2026 ColdGuard AI Technologies. All rights reserved.',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        color: subTextColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Support: support@coldguard.ai',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF00ACC1),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
